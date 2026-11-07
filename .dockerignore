@@ -1,0 +1,7 @@
+**/node_modules
+dist
+.git
+.gitignore
+.gstack
+*.log
+.DS_Store

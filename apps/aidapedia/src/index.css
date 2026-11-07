@@ -1,0 +1,7 @@
+@import "@aidapedia/shared/theme.css";
+
+@keyframes screen-progress {
+  from {
+    transform: scaleX(0);
+  }
+}
