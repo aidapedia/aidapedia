@@ -42,6 +42,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Its own stacking context, or body's background would paint over PageBackdrop's negative z-index. */
+  #root {
+    isolation: isolate;
+  }
+
   /* Anything that is Tabletsgo wears the product's own green (the app's default accent). */
   .theme-tabletsgo {
     --color-accent: #6fcf6a;
@@ -62,6 +67,15 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-edge) transparent;
   }
+}
+
+/* The grid behind PageBackdrop, drawn in the edge colour so it stays quiet under either accent. */
+@utility page-grid {
+  background-image:
+    linear-gradient(var(--color-edge) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-edge) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 75% at 75% 0%, black, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
