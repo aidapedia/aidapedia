@@ -1,4 +1,4 @@
-# tabletsgo-landing
+# Aidapedia
 
 The websites for Aidapedia's projects, one app per project, built with React, TypeScript, Vite and Tailwind on a black and white base.
 
