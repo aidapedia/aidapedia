@@ -1,0 +1,66 @@
+---
+title: Upgrading
+description: "Pull the new image and start it. The store migrates itself on the way up."
+keywords: update docker pull version snapshot SOLO_OWNER
+---
+
+Pull the new image and start it again. Your data stays in the volume, and the new image migrates the store before it serves anything.
+
+<CodeTabs>
+  <Tab label="Docker Compose">
+    ```bash
+    docker compose pull
+    docker compose up -d
+    ```
+  </Tab>
+  <Tab label="docker run">
+    ```bash
+    docker pull ghcr.io/aidapedia/tabletsgo:latest
+    docker rm -f tabletsgo
+    # then the same docker run command as before
+    ```
+  </Tab>
+</CodeTabs>
+
+To stay on one release, use a version tag instead of `latest`, as in `ghcr.io/aidapedia/tabletsgo:1.0.0`.
+
+## Migrations
+
+Every start brings the metadata store to the latest schema first. With nothing pending it is a quick check. Before changing an
+existing store it writes a snapshot to `/app/data/backups/`. If a migration fails, the app logs the error and exits, and the snapshot
+has the data as it was.
+
+```bash
+# What is applied and pending, without changing anything
+docker run --rm --env-file .env -v tabletsgo-data:/app/data ghcr.io/aidapedia/tabletsgo node scripts/migrate.js --status
+```
+
+<H2 id="in-app-updates">Updates from the app</H2>
+
+**Administration → Updates** compares the running version with the latest release. If the container can reach the Docker socket, it
+updates itself: it runs the new image's migrator first and keeps the old version running if that fails. Without the socket it shows
+the command to run instead.
+
+<Callout kind="warning" title="The Docker socket is root on the host">
+  Mounting `/var/run/docker.sock` lets the container control the host's Docker. Only mount it if that trade is worth one-click
+  updates to you; the line is commented out in `docker-compose.yml`.
+</Callout>
+
+<H2 id="from-v1">From v1.0</H2>
+
+v1.0 kept its own accounts. The first start of a release with modes moves them out, in the direction you choose:
+
+<H3 id="v1-to-enterprise">To enterprise</H3>
+
+Start it with the `HAYAT_*` values set. It writes everything the account tables held to `data/hayat-import-<time>.json` before it
+drops them. Load that file with `hayat import`, as in [Enterprise mode](/docs/enterprise#set-up). People keep their ids and
+passwords, workspaces keep their ids, and groups, owners, access lists and admins come along as Hayat grants. If Hayat already knew
+some of the email addresses, run `npm run hayat:remap -- hayat-result.json` afterwards.
+
+<H3 id="v1-to-solo">To solo</H3>
+
+- **One account:** start it with no `HAYAT_*` set. That account becomes the owner and keeps its id and password. Every workspace's
+  data moves into the one solo workspace, the oldest one, which keeps its name.
+- **Several accounts:** the start stops and explains. Either run it in enterprise mode, where everyone keeps access, or set
+  `SOLO_OWNER=you@acme.com` to keep that person and all of the data. The others lose access; the Hayat bundle written beside the
+  data still holds them.

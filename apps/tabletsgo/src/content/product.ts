@@ -25,7 +25,7 @@ type Icon = ComponentType<IconProps>
 // The header and the footer share this.
 export const MENU = [
   { to: '/databases', label: 'Databases' },
-  { to: '/docs', label: 'Docs' },
+  { to: '/docs', label: 'Documentation' },
   { to: '/changelog', label: 'Changelog' },
   { to: '/sponsor', label: 'Sponsor' },
 ]
@@ -43,12 +43,12 @@ export const FEATURES: Feature[] = [
   { name: 'Workflows', icon: WorkflowIcon, detail: 'Schedule or webhook triggers into query, HTTP, JavaScript and export steps.' },
   { name: 'Export and import', icon: TransferIcon, detail: 'Move table rows as CSV, JSON or SQL, with a dry-run preview first.' },
   { name: 'SSH tunnels', icon: TerminalIcon, detail: 'Reach private databases through a bastion: plain SSH, Railway or Cloudflare Access.' },
-  { name: 'Teams', icon: UsersIcon, detail: 'Workspaces, groups, email invites and permission-based roles on a resource tree.' },
-  { name: 'Sign-in', icon: KeyIcon, detail: 'Google or GitHub alongside a password. Open registration is optional and off by default.' },
+  { name: 'Solo or team', icon: UsersIcon, detail: 'Run it alone with nothing else, or for a team through Hayat: workspaces, groups and roles on a resource tree.' },
+  { name: 'Sign-in', icon: KeyIcon, detail: 'Solo: your own password, claimed with a code from the log. Enterprise: one Hayat account across your apps.' },
   { name: 'Modules', icon: SettingsIcon, detail: 'The instance admin chooses which databases and features the instance offers.' },
   { name: 'Time zones', icon: ClockIcon, detail: 'Each person picks a time zone, and times across the app follow it.' },
   { name: 'And more', icon: PlusIcon, detail: 'In-app updates, split view, a configurable keymap, and light and dark themes.' },
-  { name: 'Secure by default', icon: ShieldIcon, tag: 'AES-256-GCM', detail: 'Credentials are encrypted at rest, and repeated failed logins are blocked.' },
+  { name: 'Secure by default', icon: ShieldIcon, tag: 'AES-256-GCM', detail: 'Credentials are encrypted at rest, passwords are hashed with scrypt, and repeated failed sign-ins are blocked.' },
 ]
 export const IMAGE = 'ghcr.io/aidapedia/tabletsgo'
 
@@ -113,22 +113,23 @@ export const FLOW_STEPS: FlowStep[] = [
     lines: [
       { text: `docker run ${IMAGE}:latest`, prompt: true },
       { text: 'All migrations have been successfully applied.' },
-      { text: 'Server running on http://localhost:3000' },
-      { text: 'Sessions: logins in /app/data/app.db' },
+      { text: '🧭 Mode: solo' },
+      { text: '✅ Server running on http://localhost:3000' },
+      { text: '🔑 Solo setup: … enter this code: amber-orbit-river-stone-maple-otter' },
     ],
   },
   {
     id: 'setup',
-    title: 'Finish the setup wizard',
-    detail: 'Open the address in a browser. The wizard creates the instance admin and asks which databases and features to offer. The admin then creates a workspace and names its owner.',
-    panel: 'Setup wizard',
+    title: 'Claim it with the setup code',
+    detail: 'Open the address and paste the code from the log, then your name, email and a password. You are the owner and the instance admin, and you choose which databases and features it offers.',
+    panel: 'Setup',
     icon: SettingsIcon,
     lines: [
-      { text: 'Instance admin', meta: 'created' },
-      { text: 'Databases', meta: 'all four on' },
-      { text: 'Features', meta: 'chosen' },
-      { text: 'Workspace', meta: 'Engineering' },
-      { text: 'Owner', meta: 'Maya' },
+      { text: 'Setup code', meta: 'from the log' },
+      { text: 'Owner', meta: 'Maya · maya@acme.com' },
+      { text: 'Workspace', meta: 'Personal' },
+      { text: 'Databases', meta: 'chosen in Modules' },
+      { text: 'Encryption key', meta: 'generated into the volume' },
     ],
   },
   {
@@ -148,7 +149,7 @@ export const FLOW_STEPS: FlowStep[] = [
   {
     id: 'team',
     title: 'Bring your team in',
-    detail: 'Invite people by email and they sign in from a browser, with a password, Google or GitHub. Roles on a resource tree decide what each person may do, and every connection keeps its own access list.',
+    detail: 'When it is more than you, move the instance to enterprise mode. People sign in at Hayat with one account across your apps, roles on its resource tree decide what each may do, and each connection says who can open it. Your data comes along.',
     panel: 'Members',
     icon: UsersIcon,
     lines: [

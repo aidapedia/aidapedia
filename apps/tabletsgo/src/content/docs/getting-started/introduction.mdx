@@ -1,0 +1,54 @@
+---
+title: Introduction
+slug: ""
+description: "A database console you run yourself, for one developer or a whole team."
+---
+
+import { CloudIcon, DatabaseIcon, KeyIcon, SettingsIcon, ShieldIcon, TerminalIcon } from '@shared/components/icons'
+import { docUrl } from '@shared/content/tabletsgo'
+import { BuildingIcon, UserIcon } from '@/components/docs/icons'
+import { DOCS } from '@/content/product'
+
+Tabletsgo is a database console you run yourself. Browse and edit data, write queries, design schemas, build dashboards and
+workflows, and back up to any S3-compatible bucket, for PostgreSQL, MySQL, SQLite, Redis and Kafka, from one web app on your own
+server.
+
+It ships as one Docker image that runs in one of two modes.
+
+<Cards>
+  <Card to="/docs/solo" icon={UserIcon} title="Solo mode">For one developer. One container and one volume, nothing else to run. You sign in with an email and password.</Card>
+  <Card to="/docs/enterprise" icon={BuildingIcon} title="Enterprise mode">For a team. People, workspaces, roles and grants live in Hayat, the identity service your other apps can share.</Card>
+</Cards>
+
+Both modes are free, and a solo instance can move to enterprise later with its connections, workspace and settings. Not sure which
+one you need? Read [Solo or enterprise](/docs/modes).
+
+## Start here
+
+<Cards cols={3}>
+  <Card to="/docs/quick-start" icon={TerminalIcon} title="Quick start">Running in two commands.</Card>
+  <Card to="/docs/requirements" icon={DatabaseIcon} title="Requirements">The server you need, and what it can reach.</Card>
+  <Card to="/docs/configuration" icon={SettingsIcon} title="Configuration">Every environment variable, by mode.</Card>
+  <Card to="/docs/upgrading" icon={CloudIcon} title="Upgrading">Pull, restart, and the store migrates itself.</Card>
+  <Card to="/docs/security" icon={ShieldIcon} title="Security">Keys, passwords, sessions and what is encrypted.</Card>
+  <Card to="/docs/troubleshooting" icon={KeyIcon} title="Troubleshooting">What each start-up error means.</Card>
+</Cards>
+
+## How it is built
+
+One Node.js process serves the API and the web console on the same port, `3000` inside the container. It keeps its own records
+(connections, saved queries, dashboards, workflows, settings) in SQLite by default, or in PostgreSQL. It migrates that store on every
+start, so a new image upgrades it the first time it runs.
+
+Saved credentials are encrypted at rest with AES-256-GCM. The image includes the client tools the backups use: `pg_dump` and
+`pg_restore` from PostgreSQL 18, and the MySQL dump and restore tools.
+
+## Deeper guides
+
+These live with the code, so they change with each release.
+
+<Cards>
+  {DOCS.filter((d) => d.name !== 'Configuration').map((d) => (
+    <Card key={d.name} href={docUrl(d.path)} icon={d.icon} title={d.name}>{d.detail}</Card>
+  ))}
+</Cards>

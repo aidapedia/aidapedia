@@ -1,0 +1,70 @@
+---
+title: Quick start
+description: "Tabletsgo running on your machine in two commands, with nothing else to install."
+keywords: install docker run compose setup code
+---
+
+This starts Tabletsgo in solo mode on your machine. All you need is Docker.
+
+<Steps>
+  <Step title="Start the container">
+    <CodeTabs>
+      <Tab label="docker run">
+        ```bash
+        docker run -d --name tabletsgo \
+          -p 3000:3000 \
+          -v tabletsgo-data:/app/data \
+          --restart unless-stopped \
+          ghcr.io/aidapedia/tabletsgo:latest
+        ```
+      </Tab>
+      <Tab label="Docker Compose">
+        ```bash title="compose.yaml"
+        cat > compose.yaml <<'EOF'
+        services:
+          tabletsgo:
+            image: ghcr.io/aidapedia/tabletsgo:latest
+            ports:
+              - "3000:3000"
+            volumes:
+              - tabletsgo-data:/app/data
+            restart: unless-stopped
+        volumes:
+          tabletsgo-data:
+        EOF
+
+        docker compose up -d
+        ```
+      </Tab>
+    </CodeTabs>
+
+    The image is published for amd64 and arm64. With no settings at all it starts in solo mode and generates its encryption key into
+    the volume.
+  </Step>
+  <Step title="Copy the setup code from the log">
+    ```bash
+    docker logs tabletsgo
+    # 🔑 Solo setup: open http://localhost:3000 and enter this code: amber-orbit-river-stone-maple-otter
+    ```
+
+    The code is new on every start until someone uses it. It is how the instance knows you are the one who started it.
+  </Step>
+  <Step title="Claim the instance">
+    Open `http://localhost:3000`, paste the code, and enter your name, email and a password of at least 8 characters. You are signed
+    in as the owner.
+  </Step>
+  <Step title="Choose what it offers, then connect">
+    Under **Administration → Modules**, turn on the databases and features you want. Then add your first connection under
+    **Connection → New connection**.
+  </Step>
+</Steps>
+
+<Callout kind="warning" title="Back up the volume">
+  The volume holds your metadata and `encryption.key`. Without that key, saved credentials can't be read. To keep the key apart from
+  the data, set `ENCRYPTION_KEY` yourself before the first start: see [Encryption key](/docs/solo#encryption-key).
+</Callout>
+
+## Next
+
+- Put it on a server behind HTTPS: [Reverse proxy and HTTPS](/docs/reverse-proxy).
+- Working with a team? [Enterprise mode](/docs/enterprise), or [move this instance there](/docs/solo-to-enterprise) later.

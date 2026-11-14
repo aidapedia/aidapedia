@@ -1,0 +1,46 @@
+---
+title: Security
+description: "What is encrypted, how people sign in, and how sessions end."
+keywords: encryption aes scrypt tokens cookie rate limit
+---
+
+import { SUPPORT_EMAIL } from '@shared/content/company'
+
+What Tabletsgo protects, and how.
+
+<H2 id="at-rest">Secrets at rest</H2>
+
+Connection credentials, storage keys, SSH private keys and passphrases, and the admin's mail password are encrypted with
+AES-256-GCM. Each kind uses its own key, derived from `ENCRYPTION_KEY` with scrypt, so a key that leaks from one can't open another.
+Backup files can be encrypted before they are uploaded. The mail password never leaves the server: the admin page only shows whether
+one is set.
+
+<Callout kind="warning" title="The key and the data">
+  A solo install that generated its key keeps it in the same volume as the data, so a copy of the volume can read the credentials.
+  Set `ENCRYPTION_KEY` yourself and store it apart if that matters to you.
+</Callout>
+
+<H2 id="solo">Solo sign-in</H2>
+
+- **Claiming the instance** takes the setup code from the server's log, compared in constant time.
+- **Passwords** are hashed with scrypt and a random salt. A v1.0 account's old hash is replaced at its first sign-in.
+- **Sessions** are signed tokens: a 15-minute access token kept in the page's memory, and a 30-day refresh token in an `HttpOnly`,
+  `SameSite=Strict` cookie scoped to the sign-in routes and refused from other origins.
+- **Ending sessions.** Each token carries a counter. A password change or "Sign out everywhere" moves it on, and every older token
+  stops working, with nothing stored per session.
+- **Guessing** is limited to five failed attempts per address per minute.
+
+<H2 id="enterprise">Enterprise sign-in and access</H2>
+
+- People sign in at Hayat with the authorization code flow and PKCE. Tabletsgo never sees a password.
+- Access tokens are verified on every request against Hayat's published keys, and must have been issued to Tabletsgo's own sign-in
+  client.
+- Every action asks Hayat for a permission. Answers are cached for a few seconds and dropped the moment Hayat reports a change, so a
+  revoked grant takes effect at once.
+- If Hayat can't be reached, nobody is let in.
+
+## The server
+
+- The API answers on the same origin as the console; put HTTPS in front of it ([Reverse proxy](/docs/reverse-proxy)).
+- Mounting the Docker socket for one-click updates gives the container control of the host's Docker. It is off unless you mount it.
+- Report a vulnerability privately to <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>, not in a public issue.

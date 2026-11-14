@@ -1,0 +1,42 @@
+---
+title: Metadata database
+description: "Where Tabletsgo keeps its own records: SQLite by default, or PostgreSQL."
+keywords: META_DB_TYPE META_DATABASE_URL store
+---
+
+Tabletsgo's own records live in the metadata store: connections and their encrypted credentials, saved queries, dashboards, workflows,
+schedules, folders, workspace settings, and in solo mode the owner. It is separate from the databases you connect.
+
+<H2 id="sqlite">SQLite (default)</H2>
+
+Nothing to set up. The store is `/app/data/app.db` in the volume. Back up the volume and you have backed up the instance.
+
+## PostgreSQL
+
+To use the PostgreSQL service in Tabletsgo's compose file, set these in `.env`:
+
+```dotenv title=".env"
+META_DB_TYPE=postgresql
+META_POSTGRES_PASSWORD=choose-a-strong-password
+META_DATABASE_URL=postgresql://tabletsgo:choose-a-strong-password@metadata-postgres:5432/tabletsgo
+```
+
+```bash
+docker compose --profile postgresql up -d
+```
+
+For a PostgreSQL server of your own, set `META_DATABASE_URL` to it and start without the profile. Use an empty database or schema for a
+new install.
+
+<Callout kind="note" title="Switching stores doesn't copy data">
+  Changing `META_DB_TYPE` points the instance at a different store; it doesn't move what the old one holds. Keep the same
+  `ENCRYPTION_KEY` if you move encrypted records between installs. With PostgreSQL, set `ENCRYPTION_KEY` yourself: it is only
+  generated for a new SQLite store.
+</Callout>
+
+## Snapshots
+
+Before a start changes the schema, it writes a snapshot to `/app/data/backups/`: a copy of the SQLite file, or a `pg_dump`
+custom-format file for PostgreSQL. Administration → Updates can also take one before an update.
+
+Run one Tabletsgo instance per store. Connection sessions and the scheduler live in the process.

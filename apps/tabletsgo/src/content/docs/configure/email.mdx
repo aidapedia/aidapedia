@@ -1,0 +1,33 @@
+---
+title: Email
+description: "The one mail server Tabletsgo sends its notices with."
+keywords: smtp mail notifications
+---
+
+Tabletsgo sends a few notices of its own: a failed backup, and a connection locked because its database was turned off. There is one
+mail server for the whole instance, set by an instance admin. Workspaces don't configure their own.
+
+## In the app
+
+**Administration → Email**: host, port, TLS, user, password and sender, with a button that sends a test message. The password is
+encrypted and never shown again. A change takes effect at once, without a restart.
+
+## From the environment
+
+The `SMTP_*` variables are the fallback, for installs that configure everything in compose:
+
+```dotenv title=".env"
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASS=secret
+SMTP_FROM=Tabletsgo <no-reply@example.com>
+SMTP_SECURE=false   # true for TLS on port 465
+```
+
+A mail server set in the app wins over the variables. With neither, notices simply aren't sent.
+
+<Callout kind="note" title="Enterprise mode">
+  Invites, password resets and sign-up mail come from Hayat, with Hayat's own mail server. Tabletsgo's mail server only sends
+  Tabletsgo's notices.
+</Callout>

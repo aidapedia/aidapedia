@@ -1,0 +1,50 @@
+---
+title: Reverse proxy and HTTPS
+description: "Serve Tabletsgo on your domain over HTTPS, behind Caddy or nginx."
+keywords: https tls domain nginx caddy PUBLIC_URL
+---
+
+Tabletsgo serves plain HTTP on port 3000. To reach it over HTTPS on a domain, put a reverse proxy in front of it and tell the instance
+its address.
+
+## Settings
+
+- `PUBLIC_URL=https://db.acme.com`. Emailed links are built from it, and in solo mode an `https` address marks the session cookie
+  `Secure`.
+- Forward `X-Forwarded-Proto`. Tabletsgo also treats a request that arrives with `X-Forwarded-Proto: https` as secure.
+- In enterprise mode, register `https://db.acme.com/callback` as the redirect of `HAYAT_WEB_CLIENT_ID`. `hayat import --app-url` does
+  it for you.
+
+## Examples
+
+### Caddy
+
+```caddy title="Caddyfile"
+db.acme.com {
+  reverse_proxy tabletsgo:3000
+}
+```
+
+### nginx
+
+```nginx title="nginx.conf"
+server {
+  listen 443 ssl;
+  server_name db.acme.com;
+  # ssl_certificate / ssl_certificate_key …
+
+  client_max_body_size 50m;   # table imports go up to 50 MB
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}
+```
+
+<Callout kind="tip">
+  Keep port 3000 off the public internet once the proxy is in front, and serve the console and the API from the same address: the
+  published image calls the API at `/api` on whatever origin it was loaded from.
+</Callout>

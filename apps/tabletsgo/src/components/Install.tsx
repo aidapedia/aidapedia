@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { SUPPORT_EMAIL } from '@shared/content/company'
-import { docUrl } from '@shared/content/tabletsgo'
 import { IMAGE, INSTALL_METHODS } from '@/content/product'
 import CommandBlock from './CommandBlock'
 import SectionHeading from '@shared/components/SectionHeading'
@@ -40,7 +40,8 @@ export default function Install({ version }: { version?: string | null }) {
         <div className={CARD}>
           <h3 className="text-sm font-medium">Finish setup</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-dim">
-            Open <code className={MONO}>http://localhost:3000</code> and the setup wizard creates your admin account.
+            Run <code className={MONO}>{method.id === 'compose' ? 'docker compose logs tabletsgo' : 'docker logs tabletsgo'}</code> for the setup code, then open <code className={MONO}>http://localhost:3000</code> and claim the instance as its owner. For a team, see{' '}
+            <Link to="/docs/enterprise" className={LINK}>enterprise mode</Link>.
           </p>
         </div>
         <div className={CARD}>
@@ -59,7 +60,7 @@ export default function Install({ version }: { version?: string | null }) {
       </div>
       <p className="mx-auto mt-6 max-w-[70ch] text-pretty text-center text-sm leading-relaxed text-ink-dim">
         To stay on one release, replace <code className={MONO}>latest</code> with a version{pinned && <>, as in <code className={MONO}>{IMAGE}:{pinned}</code></>}. Every setting is in the{' '}
-        <a href={docUrl('docs/CONFIGURATION.md')} rel="noopener" className={LINK}>configuration reference</a>. Stuck? Email{' '}
+        <Link to="/docs/configuration" className={LINK}>configuration reference</Link>. Stuck? Email{' '}
         <a href={`mailto:${SUPPORT_EMAIL}`} className={LINK}>{SUPPORT_EMAIL}</a>.
       </p>
     </section>

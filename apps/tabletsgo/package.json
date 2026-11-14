@@ -11,5 +11,11 @@
   },
   "dependencies": {
     "@aidapedia/shared": "*"
+  },
+  "devDependencies": {
+    "@mdx-js/rollup": "^3.1.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "yaml": "^2.9.1"
   }
 }

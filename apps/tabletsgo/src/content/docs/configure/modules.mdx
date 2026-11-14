@@ -1,0 +1,30 @@
+---
+title: Modules
+description: "Choose which databases and features the instance offers."
+keywords: engines backup kafka redis admin
+---
+
+An instance admin chooses which databases and features the instance offers. Solo's owner is the instance admin; in enterprise mode it
+is whoever holds Tabletsgo admin in Hayat.
+
+<H2 id="what-you-can-turn-off">What you can turn on and off</H2>
+
+| Module                           | Kind     | Settings                          |
+| -------------------------------- | -------- | --------------------------------- |
+| PostgreSQL, MySQL, SQLite, Redis | Database | Query timeout, table row limit    |
+| Kafka                            | Database | Messages, bytes and time per read |
+| Backup                           | Feature  |                                   |
+
+Set them under **Administration → Modules**. They are stored in the instance, not in environment variables, so a change needs no
+restart. Workspaces only see what is on.
+
+## Turning off a database in use
+
+A database that connections still use asks for confirmation. Confirmed, those connections are **locked, never deleted**: they stay
+listed, nothing on them works until the database is back on, scheduled workflows and backups skip them, and their owners are emailed.
+Turning the database on again unlocks them.
+
+<Callout kind="note">
+  Turning a module off hides it in the console, and the server refuses it too: an API call for a database that is off fails the same
+  way.
+</Callout>

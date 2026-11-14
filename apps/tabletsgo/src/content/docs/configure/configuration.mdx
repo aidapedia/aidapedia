@@ -1,0 +1,125 @@
+---
+title: Configuration
+description: "Every environment variable, which mode reads it, and its default."
+keywords: env environment variables ENCRYPTION_KEY HAYAT_ISSUER PUBLIC_URL PORT .env
+---
+
+import { ENT, ENT_REQ, OPT, SOLO } from '@/components/docs/kit'
+
+Tabletsgo reads its settings from environment variables when it starts. With Docker Compose they go in `.env` beside
+`docker-compose.yml`; with `docker run`, pass `--env-file` or `-e`. A solo install needs none of them.
+
+Settings an admin is likely to change while the instance runs aren't here: modules, their limits and the mail server are set in the
+app, under Administration.
+
+## Mode and keys
+
+<Params>
+  <Param name="TABLETSGO_MODE" badges={[OPT]} def="the recorded mode">
+    `solo` or `enterprise`. Unset, the instance uses the mode it recorded on its first start; a new instance starts in enterprise mode
+    when `HAYAT_ISSUER` is set, else in solo mode. An instance recorded as enterprise refuses to start as solo. See
+    [Solo or enterprise](/docs/modes).
+  </Param>
+  <Param name="ENCRYPTION_KEY" badges={[ENT_REQ]}>
+    Encrypts saved credentials at rest (AES-256-GCM), and derives the keys for storage credentials, SSH secrets, the admin's mail
+    password and solo session tokens. Generate one with `openssl rand -hex 32`.
+
+    A new solo install on SQLite can leave it unset: it generates one into `/app/data/encryption.key`. That file is read in either mode
+    whenever the variable is unset. Losing or changing the key makes saved credentials unreadable.
+  </Param>
+  <Param name="SOLO_OWNER" badges={[SOLO, OPT]}>
+    Only for a v1.0 install with several accounts moving to solo: the email of the account that keeps the instance. Ignored otherwise.
+    See [Upgrading from v1.0](/docs/upgrading#v1-to-solo).
+  </Param>
+</Params>
+
+<H2 id="enterprise">Hayat (enterprise)</H2>
+
+`hayat import` prints the first four when it registers Tabletsgo. Solo mode reads none of these.
+
+<Params>
+  <Param name="HAYAT_ISSUER" badges={[ENT_REQ]}>
+    Hayat's sign-in (the auth role), as people's browsers reach it. Access tokens are verified against its published keys.
+  </Param>
+  <Param name="HAYAT_API_URL" badges={[ENT_REQ]}>
+    Hayat's service API (the api role), reachable from this server only.
+  </Param>
+  <Param name="HAYAT_CLIENT_ID" badges={[ENT_REQ]}>
+    Tabletsgo's service credentials in Hayat, with `HAYAT_CLIENT_SECRET`.
+  </Param>
+  <Param name="HAYAT_CLIENT_SECRET" badges={[ENT_REQ]}>
+    The secret that goes with the client id. Keep it out of version control.
+  </Param>
+  <Param name="HAYAT_WEB_CLIENT_ID" badges={[ENT_REQ]}>
+    The public client the browser signs in with. A token issued to any other client is refused.
+  </Param>
+  <Param name="HAYAT_CONSOLE_URL" badges={[ENT, OPT]}>
+    Hayat's console. Without it, the "Manage in Hayat" links are hidden.
+  </Param>
+  <Param name="HAYAT_AUTH_URL" badges={[ENT, OPT]} def="HAYAT_ISSUER">
+    Hayat's sign-in as this server reaches it, when that isn't the public issuer. Inside Docker, `localhost` is the container itself, so
+    this is often `http://hayat-auth:8443`.
+  </Param>
+</Params>
+
+## Network
+
+<Params>
+  <Param name="PORT" def="3000">
+    The port the server listens on. In `docker-compose.yml` it is the host port; the container always listens on 3000.
+  </Param>
+  <Param name="PUBLIC_URL" badges={[OPT]}>
+    The address people reach the instance at, such as `https://db.acme.com`. Set it behind a reverse proxy: emailed links use it, and
+    an `https` address marks solo's session cookie `Secure`. See [Reverse proxy and HTTPS](/docs/reverse-proxy).
+  </Param>
+</Params>
+
+## Metadata store
+
+<Params>
+  <Param name="META_DB_TYPE" def="sqlite">
+    `sqlite` or `postgresql`. See [Metadata database](/docs/metadata-database).
+  </Param>
+  <Param name="META_DB" def="/app/data/app.db">
+    The SQLite file, when the store is SQLite.
+  </Param>
+  <Param name="META_DATABASE_URL">
+    The PostgreSQL URL, required when `META_DB_TYPE=postgresql`.
+  </Param>
+</Params>
+
+## Mail
+
+<Params>
+  <Param name="SMTP_HOST" badges={[OPT]}>
+    The fallback mail server for Tabletsgo's own notices, with `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` and `SMTP_SECURE`
+    (`true` for TLS on port 465). A mail server set under Administration → Email wins. See [Email](/docs/email).
+  </Param>
+</Params>
+
+## Tuning
+
+<Params>
+  <Param name="HANDSHAKE_TIMEOUT_MS" def="8000">
+    How long the check before opening a connection waits for the database to answer. Raise it only for databases behind a slow tunnel.
+  </Param>
+  <Param name="SESSION_IDLE_TTL_MS" def="900000">
+    How long an open database connection may sit unused before it is closed. The next query opens it again.
+  </Param>
+  <Param name="MAX_SESSIONS_PER_CONNECTION" def="0">
+    The most connections this instance may hold open to one database at once; `0` means no limit. A workspace can set its own under
+    Workspace → Config.
+  </Param>
+  <Param name="WORKFLOW_SCHEDULER_ENABLED" def="true">
+    Set to `false` to stop the scheduler that runs scheduled workflows and backups, for example on a test instance.
+  </Param>
+</Params>
+
+## Build time
+
+<Params>
+  <Param name="VITE_API_URL" def="/api">
+    Where the console calls the API, baked into the console when the image is built. Leave it for the published image; change it only
+    when you build the console and the API to run on different origins.
+  </Param>
+</Params>

@@ -1,0 +1,44 @@
+---
+title: Solo or enterprise
+description: "One image, two ways to run it. What differs, and how the instance decides."
+keywords: mode TABLETSGO_MODE compare team single user
+---
+
+The same image runs Tabletsgo for one person or for a team. The difference is where people and their access live. Both modes are
+free.
+
+<ModeDiagram />
+
+|                          | <Badge kind="solo">Solo</Badge>        | <Badge kind="enterprise">Enterprise</Badge>              |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------- |
+| For                      | One developer                          | A team                                                   |
+| Runs                     | Tabletsgo alone                        | Tabletsgo and Hayat                                      |
+| Who signs in             | One owner, with email and password     | Anyone Hayat lets in, with one account across your apps |
+| Workspaces               | One, renamed under Workspace → General | Hayat tenants, each with its roster and groups           |
+| Access                   | The owner can do everything            | Roles and grants, set in Hayat's console                 |
+| Members and access lists | Not shown: there is nobody else        | Read from Hayat, with links to change them there         |
+| Required settings        | None                                   | `ENCRYPTION_KEY` and the `HAYAT_*` values                |
+
+Everything else is the same in both: the console, the databases, dashboards, workflows, backups, modules, the mail server and in-app
+updates. A solo owner is also the instance admin.
+
+## Which mode starts
+
+The mode is decided on every start, in this order:
+
+1. `TABLETSGO_MODE`, when it is set to `solo` or `enterprise`.
+2. Otherwise, the mode the instance recorded the first time it started.
+3. Otherwise, on a new instance: enterprise when `HAYAT_ISSUER` is set, else solo.
+
+The first start records the mode in the metadata store. From then on it only changes when you change it on purpose.
+
+<Callout kind="note" title="An enterprise instance never falls back to solo">
+  If an instance has run in enterprise mode, it refuses to start in solo mode, even if its `HAYAT_*` settings go missing. Otherwise a
+  lost setting would turn a team's instance into a fresh solo one, with its setup page open to anyone who could reach it.
+</Callout>
+
+## Changing mode
+
+- **Solo to enterprise** is supported, with your data: [Solo to enterprise](/docs/solo-to-enterprise).
+- **Enterprise to solo** isn't supported in place, because solo can't hold the people Hayat knows. Export the connections you want
+  from each connection's page and import them into a new solo instance.

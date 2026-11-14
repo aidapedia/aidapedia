@@ -18,11 +18,12 @@ const KEYFRAMES = [
   { opacity: 1, transform: 'none' },
 ]
 
-// Each block of the page rises in once, the first time it comes on screen. `page` is what starts this over.
+// Each block of the page rises in once, the first time it comes on screen. `page` is what starts this over;
+// `enabled` false leaves the page still (the docs).
 // Web animations leave nothing on the element when they end, and if this never runs nothing was hidden.
-export function useReveal(main: RefObject<HTMLElement | null>, page: string) {
+export function useReveal(main: RefObject<HTMLElement | null>, page: string, enabled = true) {
   useLayoutEffect(() => {
-    if (!main.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!enabled || !main.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const waiting = new Map<Element, Animation>()
     for (const block of main.current.querySelectorAll(BLOCKS)) {
@@ -51,5 +52,5 @@ export function useReveal(main: RefObject<HTMLElement | null>, page: string) {
       observer.disconnect()
       waiting.forEach((animation) => animation.cancel())
     }
-  }, [main, page])
+  }, [main, page, enabled])
 }

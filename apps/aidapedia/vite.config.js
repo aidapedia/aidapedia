@@ -15,6 +15,7 @@ const tabletsgoPreview = {
 export default defineConfig(
   siteConfig({
     app: import.meta.url,
+    site: 'aidapedia',
     plugins: [tabletsgoPreview],
     // Tabletsgo is another app, so in dev its addresses go to its own server, which only answers with the slash.
     server: {

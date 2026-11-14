@@ -1,0 +1,24 @@
+# Tabletsgo's product page and docs on a domain of their own. Aidapedia's site is
+# deployed apart (apps/aidapedia/docker-compose.yml); the header and footer link to it.
+#
+#   cd apps/tabletsgo
+#   AIDAPEDIA_URL=https://aidapedia.example.com/ docker compose up -d --build
+#
+# Both apps on one domain instead: the root docker-compose.yml.
+services:
+  tabletsgo:
+    build:
+      context: ../..
+      dockerfile: apps/tabletsgo/Dockerfile
+      args:
+        # This site's own address; a path is enough when it is served from the domain root.
+        TABLETSGO_URL: ${TABLETSGO_URL:-/}
+        AIDAPEDIA_URL: ${AIDAPEDIA_URL:?set AIDAPEDIA_URL (where Aidapedia's site is reached, e.g. https://aidapedia.example.com/)}
+    ports:
+      - "${PORT:-8081}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

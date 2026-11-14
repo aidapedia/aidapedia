@@ -1,0 +1,110 @@
+---
+title: Solo mode
+description: "Tabletsgo for one person: one owner, one workspace, nothing else to run."
+keywords: setup code password reset forgot sign in owner
+---
+
+Solo mode is Tabletsgo for one person. There is one owner, one workspace and nothing else to run. It is what a new instance starts
+in when no `HAYAT_*` setting is present.
+
+## Install
+
+<CodeTabs>
+  <Tab label="docker run">
+    ```bash
+    docker run -d --name tabletsgo \
+      -p 3000:3000 \
+      -v tabletsgo-data:/app/data \
+      --restart unless-stopped \
+      ghcr.io/aidapedia/tabletsgo:latest
+    ```
+  </Tab>
+  <Tab label="Compose (from the repo)">
+    ```bash
+    git clone https://github.com/aidapedia/tabletsgo.git
+    cd tabletsgo
+    cp .env.example .env        # optional: nothing in it is required for solo
+    docker compose up -d        # docker-compose.yml is the solo file
+    ```
+  </Tab>
+</CodeTabs>
+
+To be explicit about the mode, set `TABLETSGO_MODE=solo`. You don't have to.
+
+## First run
+
+A new solo instance has no owner yet. On every start until it has one, it prints a six-word setup code to its log:
+
+```bash
+docker logs tabletsgo
+# 🧭 Mode: solo
+# 🪪 Mode: solo — one owner, signed in by password
+# 🔑 Solo setup: open http://localhost:3000 and enter this code: amber-orbit-river-stone-maple-otter
+```
+
+Open the address and the console shows the setup form. Enter the code, your name, email and a password of at least 8 characters.
+Your browser's time zone is saved with the account. Once it is done the code stops working and the form is gone.
+
+<Callout kind="tip" title="Why a code">
+  The code means only someone who can read the server's log can claim the instance, even if its port is reachable from elsewhere
+  before you get to it.
+</Callout>
+
+## Encryption key
+
+Saved credentials are encrypted with a key derived from `ENCRYPTION_KEY`. On a new solo install with the default SQLite store, you
+can leave it unset: the first start generates one and writes it to `/app/data/encryption.key`, readable by its owner only.
+
+- Back up that file with the volume. Without it, saved credentials can't be read.
+- To keep the key apart from the data, set `ENCRYPTION_KEY` before the first start. Generate one with `openssl rand -hex 32`.
+- A key is only generated for a new store. An existing store started without its key refuses to start rather than get a new one.
+- With PostgreSQL as the metadata store, set `ENCRYPTION_KEY` yourself.
+
+## Signing in
+
+The owner signs in with email and password. A session is a 15-minute access token, renewed in the background from a 30-day cookie
+the browser can't read from scripts (`HttpOnly`, `SameSite=Strict`). Reloading the page or opening a new tab keeps you signed in.
+
+- **Five failed attempts** from one address in a minute lock that address out for the rest of the minute.
+- **Changing the password** signs out every other browser and device.
+- **Setting → Account → Sign out everywhere** ends every session, this one included.
+
+### Forgotten password
+
+On the server, ask the instance for a new one. Whoever can do this already holds the data volume, so it asks for nothing else.
+
+<CodeTabs>
+  <Tab label="docker run">
+    ```bash
+    docker exec tabletsgo npm run solo:reset-password
+    # ✅ New password for dev@example.com: 4kQ0p3m-Xv8sL2aZ
+    ```
+  </Tab>
+  <Tab label="Compose">
+    ```bash
+    docker compose exec tabletsgo npm run solo:reset-password
+    # choose it yourself:
+    docker compose exec tabletsgo npm run solo:reset-password -- --password 'a-long-new-one'
+    ```
+  </Tab>
+</CodeTabs>
+
+Every session ends. Sign in with the new password, then change it under Setting → Account.
+
+## Your account
+
+Under **Setting → Account** you change your name, the email you sign in with, your time zone and your password. Times across the app
+are shown in your time zone; leave it empty to follow the browser.
+
+## The workspace
+
+A solo instance has exactly one workspace, called Personal until you rename it under **Workspace → General**. Everything you add
+lives in it: connections, storage destinations, SSH hosts and keys, dashboards, workflows and schema drafts.
+
+## What solo leaves out
+
+There is nobody else on a solo instance, so the pages about other people are not there: the Member list, each connection's list of
+who can open it, and ownership transfer. Opening them directly explains why and links to
+[moving to enterprise](/docs/solo-to-enterprise).
+
+Press <Kbd>⌘</Kbd> <Kbd>K</Kbd> in these docs to search for anything else.

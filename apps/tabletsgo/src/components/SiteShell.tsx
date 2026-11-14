@@ -15,15 +15,17 @@ import StarCount from './StarCount'
 export default function SiteShell({ stats, children }: { stats: GitHubStats | null; children: ReactNode }) {
   const { pathname } = useLocation()
   const main = useRef<HTMLElement>(null)
-  useReveal(main, pathname)
+  // The docs are read, not scrolled through once: no rise-in, and room for a sidebar and a contents rail.
+  const docs = pathname === '/docs' || pathname.startsWith('/docs/')
+  useReveal(main, pathname, !docs)
 
   return (
     <div className="theme-tabletsgo">
-      <PageBackdrop />
+      <PageBackdrop still={docs} />
       <SiteHeader
         brand={<Brand />}
         menu={MENU}
-        active={pathname}
+        active={docs ? '/docs' : pathname}
         actions={
           <ButtonLink href={REPO_URL} size="sm" icon={GitHubIcon} aria-label="Star Tabletsgo on GitHub" className="max-sm:min-h-11">
             <span className="max-sm:sr-only">Star</span>
@@ -31,7 +33,7 @@ export default function SiteShell({ stats, children }: { stats: GitHubStats | nu
           </ButtonLink>
         }
       />
-      <main ref={main} className="mx-auto max-w-[1152px] px-4 md:px-6 xl:px-0">{children}</main>
+      <main ref={main} className={`mx-auto px-4 md:px-6 ${docs ? 'max-w-[1280px]' : 'max-w-[1152px] xl:px-0'}`}>{children}</main>
       <SiteFooter />
     </div>
   )

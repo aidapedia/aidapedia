@@ -31,12 +31,15 @@
 }
 
 @layer base {
+  /* No rubber-band past the top or bottom of the page. */
   html {
     color-scheme: dark;
     background: var(--color-bg);
+    overscroll-behavior-y: none;
   }
 
   body {
+    overscroll-behavior-y: none;
     background: var(--color-bg);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
@@ -69,13 +72,78 @@
   }
 }
 
-/* The grid behind PageBackdrop, drawn in the edge colour so it stays quiet under either accent. */
+/*
+ * The grid behind PageBackdrop, drawn in the edge colour so it stays quiet under either accent.
+ * Anchored to the top-right, where it shows, so PageBackdrop can place cells and pulses on its lines.
+ */
 @utility page-grid {
+  --grid-line: var(--color-edge);
   background-image:
-    linear-gradient(var(--color-edge) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-edge) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(270deg, var(--grid-line) 1px, transparent 1px);
   background-size: 64px 64px;
+  background-position: right top;
+}
+
+/* What fades the grid and everything on it out from the top-right. */
+@utility page-grid-fade {
   mask-image: radial-gradient(ellipse 90% 75% at 75% 0%, black, transparent);
+}
+
+/* The same lines in the accent, shown only around the pointer (PageBackdrop sets --spot-x/y). */
+@utility page-grid-spot {
+  --grid-line: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  mask-image: radial-gradient(circle 200px at var(--spot-x, -999px) var(--spot-y, -999px), black, transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+[data-spot] .page-grid-spot {
+  opacity: 1;
+}
+
+@keyframes grid-pulse-x {
+  from {
+    transform: translateX(-10rem);
+  }
+  to {
+    transform: translateX(100vw);
+  }
+}
+
+@keyframes grid-pulse-y {
+  from {
+    transform: translateY(-10rem);
+  }
+  to {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes grid-cell {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45%,
+  55% {
+    opacity: 1;
+  }
+}
+
+@utility grid-pulse-x {
+  transform: translateX(-10rem);
+  animation: grid-pulse-x 8s linear infinite;
+}
+
+@utility grid-pulse-y {
+  transform: translateY(-10rem);
+  animation: grid-pulse-y 8s linear infinite;
+}
+
+@utility grid-cell {
+  opacity: 0;
+  animation: grid-cell 7s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -89,5 +157,16 @@
   *::before,
   *::after {
     transition: none !important;
+  }
+
+  /* The grid holds still: no running light, and the lit cells stay lit. */
+  .grid-pulse-x,
+  .grid-pulse-y {
+    display: none;
+  }
+
+  .grid-cell {
+    animation: none;
+    opacity: 0.5;
   }
 }

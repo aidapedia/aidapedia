@@ -1,0 +1,56 @@
+---
+title: Troubleshooting
+description: "What each start-up and sign-in error means, and what to do about it."
+keywords: error fails refuses ENCRYPTION_KEY not set hayat not configured setup code wrong too many attempts
+---
+
+{/* Each problem is an H3 titled with the message itself, with a short id that links can rely on. */}
+
+The messages a start or a sign-in can stop with, what they mean and what to do. Read the log with `docker logs tabletsgo`.
+
+## Starting
+
+<H3 id="encryption-key-not-set">ENCRYPTION_KEY is not set</H3>
+
+The store already exists, or isn't SQLite, or this is an enterprise instance, so no key is generated. Set the key the store was
+created with. If it was generated, it is in `/app/data/encryption.key` of the original volume.
+
+<H3 id="hayat-not-configured">Hayat is not configured</H3>
+
+The instance runs in enterprise mode without its `HAYAT_*` settings. Set them ([Configuration](/docs/configuration#enterprise)). An
+instance that has run in enterprise mode keeps asking for them even if `TABLETSGO_MODE` is unset.
+
+<H3 id="runs-in-enterprise-mode">This instance runs in enterprise mode … solo mode can’t take them back</H3>
+
+`TABLETSGO_MODE=solo` was set on an instance recorded as enterprise. That is refused on purpose. Remove the setting and configure
+Hayat, or [start a new solo instance](/docs/modes#changing-mode).
+
+<H3 id="several-accounts">This instance has N accounts, and solo mode keeps one person</H3>
+
+A v1.0 instance with several accounts is starting in solo mode. Nothing has changed yet. Run it in enterprise mode, or set
+`SOLO_OWNER` to the email of the account that keeps it ([Upgrading](/docs/upgrading#v1-to-solo)).
+
+<H3 id="migration-failed">Couldn’t start: prisma migrate deploy failed</H3>
+
+A schema migration failed and the store was left as it was. The snapshot taken before it is in `/app/data/backups/`. Keep the log
+and open an issue.
+
+## Signing in
+
+<H3 id="setup-code-wrong">That setup code is wrong</H3>
+
+Copy the code from the latest start's log. A new code is printed on every start until setup is done, so an older one stops working.
+
+<H3 id="too-many-attempts">Too many attempts. Wait a minute and try again.</H3>
+
+Five failed attempts from your address in the last minute. Wait, then sign in. If you've lost the password, reset it on the server.
+
+<H3 id="already-set-up">This instance is already set up</H3>
+
+Someone has claimed it. If that wasn't you, the instance was reachable before you set it up: reset the password from the server
+([Forgotten password](/docs/solo#forgotten-password)) and check who else can reach the port.
+
+<H3 id="signing-in-isnt-set-up">Signing in isn’t set up</H3>
+
+The console couldn't learn how to sign in: an enterprise instance without its Hayat addresses, or a proxy that doesn't pass `/api`
+through. Open `/api/auth/config` directly to see which.

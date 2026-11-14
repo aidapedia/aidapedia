@@ -1,0 +1,55 @@
+---
+title: Solo to enterprise
+description: "Move a solo instance to enterprise mode with its connections, workspace and settings."
+keywords: migrate upgrade team hayat bundle
+---
+
+A solo instance moves to enterprise mode with its data: connections, storage destinations, SSH hosts and keys, dashboards,
+workflows, the workspace and its settings. You keep your id, so you keep owning everything.
+
+<Steps>
+  <Step title="Deploy Hayat">
+    Use [Hayat's compose file](https://github.com/aidapedia/hayat/tree/main/deploy/compose), or a Hayat you already run.
+  </Step>
+  <Step title="Write the import bundle from the solo instance">
+    ```bash
+    docker compose exec tabletsgo npm run hayat:bundle -- --out /app/data/hayat-import.json
+    docker compose cp tabletsgo:/app/data/hayat-import.json .
+    ```
+
+    It holds you as a pending account with Tabletsgo admin, your workspace as a Hayat tenant with the same id, and every connection
+    and storage destination as a resource you own.
+  </Step>
+  <Step title="Load it into Hayat">
+    ```bash
+    hayat import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
+    ```
+
+    It registers Tabletsgo and prints the `HAYAT_*` values.
+  </Step>
+  <Step title="Configure and restart in enterprise mode">
+    Put the `HAYAT_*` values in `.env`, and set `ENCRYPTION_KEY`. If solo generated the key, copy it from the volume so the saved
+    credentials stay readable:
+
+    ```bash
+    docker compose exec tabletsgo cat /app/data/encryption.key
+    docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d
+    ```
+
+    The log shows `🔁 Mode: solo → enterprise`. If you skipped step 2, this start writes the bundle into the volume itself and says
+    where.
+  </Step>
+  <Step title="Sign up at Hayat with the owner's email">
+    Your pending account takes your Tabletsgo id, and with it every connection you own. Then invite your team in Hayat's console.
+  </Step>
+</Steps>
+
+<Callout kind="note" title="Your password doesn't move">
+  Hayat stores passwords its own way, so you choose a password when you sign up there. An account carried over from Tabletsgo v1.0
+  that never signed in to solo mode is the exception: Hayat reads its old password and upgrades it at the first sign-in.
+</Callout>
+
+## Going back
+
+Once an instance has run in enterprise mode it won't start in solo mode. To work alone again, export the connections you want and
+import them into a new solo instance.

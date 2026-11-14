@@ -23,6 +23,7 @@ export default function App() {
           <Route path="/" element={<HomePage stats={stats} />} />
           <Route path="/databases" element={<DatabasesPage />} />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/docs/:slug" element={<DocsPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/compare/:slug" element={<ComparePage />} />
           <Route path="/sponsor" element={<SponsorPage />} />

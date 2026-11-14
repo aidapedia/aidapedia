@@ -1,0 +1,55 @@
+---
+title: API
+description: "The JSON API behind the console, and how to call it."
+keywords: swagger openapi rest token bearer curl
+---
+
+Everything the console does goes through a JSON API under `/api`. Every running instance describes it at `/api/docs`: each route
+with its parameters, sample requests and responses, which you can try from the page.
+
+## Authenticating
+
+Send an access token as `Authorization: Bearer`. Ask `GET /api/auth/config` first, which needs no token, to learn which kind:
+
+```json title="GET /api/auth/config"
+// solo
+{ "mode": "solo", "setupRequired": false, "people": false }
+
+// enterprise
+{ "mode": "enterprise", "issuer": "https://auth.acme.com",
+  "clientId": "0193f3a2-…", "consoleUrl": "https://hayat.acme.com", "people": true }
+```
+
+<H3 id="solo-token">Solo</H3>
+
+```bash
+curl -s https://db.acme.com/api/auth/solo/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"dev@example.com","password":"…"}'
+# → { "accessToken": "eyJ…", "expiresIn": 900, "user": { … } }
+
+curl -s https://db.acme.com/api/auth/me -H "Authorization: Bearer $TOKEN"
+```
+
+The access token lasts 15 minutes. A script can sign in again when it gets a 401.
+
+<H3 id="enterprise-token">Enterprise</H3>
+
+Use a token Hayat issued to Tabletsgo's sign-in client, from your OIDC library.
+
+<H2 id="sign-in-routes">Solo sign-in routes</H2>
+
+| Route                          | Does                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `POST /api/auth/solo/setup`    | Claims a new instance with the setup code, name, email and password.         |
+| `POST /api/auth/solo/login`    | Signs the owner in.                                                          |
+| `POST /api/auth/solo/refresh`  | A new access token from the refresh cookie.                                  |
+| `POST /api/auth/solo/logout`   | Clears the cookie; with `{ "everywhere": true }` it ends every session.      |
+| `PUT /api/auth/solo/account`   | Changes the owner's name, email or time zone.                                |
+| `PUT /api/auth/solo/password`  | Changes the password and ends every other session.                           |
+
+In enterprise mode they answer 404.
+
+## Health
+
+`GET /api/health` answers 200 once the server is listening. The image's health check uses it.
