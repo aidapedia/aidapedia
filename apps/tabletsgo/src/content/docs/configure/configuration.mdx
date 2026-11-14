@@ -35,7 +35,9 @@ app, under Administration.
 
 <H2 id="enterprise">Hayat (enterprise)</H2>
 
-`hayat import` prints the first four when it registers Tabletsgo. Solo mode reads none of these.
+When `hayat import` registers Tabletsgo, it prints `HAYAT_ISSUER`, `HAYAT_CLIENT_ID`, `HAYAT_CLIENT_SECRET` and
+`HAYAT_WEB_CLIENT_ID`. `HAYAT_API_URL` is yours to fill in. For example values in common setups, see
+[Wiring Tabletsgo to Hayat](/docs/enterprise#wiring). Solo mode reads none of these.
 
 <Params>
   <Param name="HAYAT_ISSUER" badges={[ENT_REQ]}>

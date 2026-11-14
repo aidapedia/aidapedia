@@ -9,7 +9,7 @@ workflows, the workspace and its settings. You keep your id, so you keep owning 
 
 <Steps>
   <Step title="Deploy Hayat">
-    Use [Hayat's compose file](https://github.com/aidapedia/hayat/tree/main/deploy/compose), or a Hayat you already run.
+    Use [Hayat's compose file](/docs/enterprise#deploy-hayat), or a Hayat you already run.
   </Step>
   <Step title="Write the import bundle from the solo instance">
     ```bash
@@ -21,26 +21,48 @@ workflows, the workspace and its settings. You keep your id, so you keep owning 
     and storage destination as a resource you own.
   </Step>
   <Step title="Load it into Hayat">
+    From the folder that holds `hayat-import.json`, run `import` from Hayat's image with Hayat's settings:
+
     ```bash
-    hayat import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
+    docker compose -f ~/hayat/deploy/compose/docker-compose.yml run --rm --no-deps \
+      --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+      hayat-api import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
     ```
 
-    It registers Tabletsgo and prints the `HAYAT_*` values.
+    It registers Tabletsgo and prints the `HAYAT_*` values. The client secret is shown once. See
+    [Register Tabletsgo in Hayat](/docs/enterprise#set-up) for what each flag does.
   </Step>
   <Step title="Configure and restart in enterprise mode">
-    Put the `HAYAT_*` values in `.env`, and set `ENCRYPTION_KEY`. If solo generated the key, copy it from the volume so the saved
-    credentials stay readable:
+    Add `TABLETSGO_MODE=enterprise`, the printed values and `HAYAT_API_URL` to your settings file: `tabletsgo.env` if you installed
+    from the home page, or `.env` beside the repo's compose files. Set `ENCRYPTION_KEY` too. If solo generated the key, copy it from
+    the volume so the saved credentials stay readable:
 
     ```bash
     docker compose exec tabletsgo cat /app/data/encryption.key
-    docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d
     ```
+
+    Then start it again. With the home page's `compose.yaml`, run `docker compose up -d`. With the repo's files, run
+    `docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d`. If Hayat runs in Docker on the same host, join its
+    network first ([Wiring](/docs/enterprise#wiring)).
 
     The log shows `🔁 Mode: solo → enterprise`. If you skipped step 2, this start writes the bundle into the volume itself and says
     where.
   </Step>
-  <Step title="Sign up at Hayat with the owner's email">
-    Your pending account takes your Tabletsgo id, and with it every connection you own. Then invite your team in Hayat's console.
+  <Step title="If Hayat already knew your email, point your data at that account">
+    When `hayat import` printed `1 people matched existing accounts under other ids`, you already had a Hayat account, and it keeps
+    its own id. Rewrite your connections and history to that id:
+
+    ```bash
+    docker compose cp hayat-result.json tabletsgo:/app/data/hayat-result.json
+    docker compose exec tabletsgo node scripts/hayat-remap.js /app/data/hayat-result.json
+    docker compose exec tabletsgo rm /app/data/hayat-result.json
+    ```
+
+    Skip this step when the import said `0 already here`.
+  </Step>
+  <Step title="Sign in at Hayat">
+    If Hayat didn't know you, sign up there with the owner's email: your pending account takes your Tabletsgo id, and with it every
+    connection you own. If it did, sign in with the account you have. Then invite your team in Hayat's console.
   </Step>
 </Steps>
 

@@ -55,7 +55,9 @@ v1.0 kept its own accounts. The first start of a release with modes moves them o
 Start it with the `HAYAT_*` values set. It writes everything the account tables held to `data/hayat-import-<time>.json` before it
 drops them. Load that file with `hayat import`, as in [Enterprise mode](/docs/enterprise#set-up). People keep their ids and
 passwords, workspaces keep their ids, and groups, owners, access lists and admins come along as Hayat grants. If Hayat already knew
-some of the email addresses, run `npm run hayat:remap -- hayat-result.json` afterwards.
+some of the email addresses, copy `hayat-result.json` into the volume and run
+`docker compose exec tabletsgo node scripts/hayat-remap.js /app/data/hayat-result.json` afterwards, as in
+[Solo to enterprise](/docs/solo-to-enterprise).
 
 <H3 id="v1-to-solo">To solo</H3>
 

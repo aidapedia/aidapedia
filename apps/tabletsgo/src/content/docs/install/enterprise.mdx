@@ -1,92 +1,155 @@
 ---
 title: Enterprise mode
-description: "People, workspaces, roles and grants in Hayat, shared with your other apps."
-keywords: hayat team roles permissions sso oidc import bundle
+description: "Run Tabletsgo for a team on Hayat: register it, fill in its settings, start it."
+keywords: hayat team roles permissions sso oidc import bundle HAYAT_ISSUER HAYAT_API_URL HAYAT_AUTH_URL client secret existing network docker
 ---
 
-In enterprise mode Tabletsgo keeps no accounts of its own. [Hayat](https://github.com/aidapedia/hayat) holds the people, the
-workspaces (Hayat calls them tenants), groups, roles and grants, and Tabletsgo asks it every question. People sign in at Hayat with
-one account they can use across your apps.
+In enterprise mode, people sign in at [Hayat](https://github.com/aidapedia/hayat) with one account they can use across your apps.
+Hayat holds the people, the workspaces (it calls them tenants), the roles and the grants. Tabletsgo keeps no accounts of its own.
 
-## Before you start
+Already running Tabletsgo? To share a solo instance, see [Solo to enterprise](/docs/solo-to-enterprise). To upgrade a v1.0 install
+that has its own accounts, see [Upgrading from v1.0](/docs/upgrading#v1-to-enterprise).
 
-- A running Hayat. Its repo has a compose file that runs it with PostgreSQL, Redis and a mail catcher
-  ([deploy/compose](https://github.com/aidapedia/hayat/tree/main/deploy/compose)).
-- The `hayat` command line, to register Tabletsgo in it.
-- A clone of the Tabletsgo repo, for its compose files and the registration script.
+## What you need
 
-## Set up
+- **Docker** on the Tabletsgo server. You don't need to clone either repo.
+- **A running Hayat.** No Hayat yet? [Deploy one](#deploy-hayat) first.
+- **Tabletsgo's address**, such as `https://db.acme.com`. After people sign in at Hayat, they are sent back to this address.
+
+<H2 id="set-up">Set up</H2>
+
+Run these in an empty folder on the Tabletsgo server.
 
 <Steps>
-  <Step title="Write the registration bundle">
+  <Step title="Write the key and the registration bundle">
     ```bash
-    git clone https://github.com/aidapedia/tabletsgo.git && cd tabletsgo
-    npm ci
-    npm run hayat:bundle -- --out hayat-import.json --admin you@acme.com
+    echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" > tabletsgo.env
+
+    docker run --rm --env-file tabletsgo.env ghcr.io/aidapedia/tabletsgo:latest \
+      node scripts/hayat-bundle.js --out - --admin you@acme.com > hayat-import.json
     ```
 
-    The bundle holds Tabletsgo's contract: its resource types, permissions and default roles. `--admin` names the person who will
-    administer Tabletsgo.
+    The key encrypts saved credentials. Back it up, because losing it makes them unreadable. The person named by `--admin` becomes
+    **Tabletsgo admin**.
   </Step>
   <Step title="Register Tabletsgo in Hayat">
+    Run `import` from Hayat's image, with Hayat's settings. With Hayat's compose file:
+
     ```bash
-    hayat import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
+    docker compose -f ~/hayat/deploy/compose/docker-compose.yml run --rm --no-deps \
+      --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+      hayat-api import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
     ```
 
-    This registers Tabletsgo as a service, approves its contract, registers the browser's sign-in client at `<app-url>/callback`,
-    and prints `HAYAT_ISSUER`, `HAYAT_CLIENT_ID`, `HAYAT_CLIENT_SECRET` and `HAYAT_WEB_CLIENT_ID`.
+    It prints the `HAYAT_*` values for the next step.
+
+    <Callout kind="warning" title="The secret is shown once">
+      Copy `HAYAT_CLIENT_SECRET` now. `hayat-result.json` holds it too, so delete that file once Tabletsgo is running. You can rotate a
+      lost secret in Hayat's console, under **Services → tabletsgo → Clients**.
+    </Callout>
   </Step>
-  <Step title="Fill in .env">
-    ```dotenv title=".env"
-    ENCRYPTION_KEY=          # openssl rand -hex 32
-    HAYAT_ISSUER=https://auth.acme.com
-    HAYAT_API_URL=http://hayat-api:7443
-    HAYAT_CLIENT_ID=
-    HAYAT_CLIENT_SECRET=
-    HAYAT_WEB_CLIENT_ID=
-    HAYAT_CONSOLE_URL=https://hayat.acme.com   # optional
-    PUBLIC_URL=https://db.acme.com
+  <Step title="Fill in the settings">
+    ```dotenv title="tabletsgo.env"
+    ENCRYPTION_KEY=…                          # from step 1
+    TABLETSGO_MODE=enterprise
+    PUBLIC_URL=https://db.acme.com            # the --app-url you registered
+
+    HAYAT_ISSUER=https://auth.acme.com        # printed
+    HAYAT_CLIENT_ID=…                         # printed
+    HAYAT_CLIENT_SECRET=…                     # printed, once
+    HAYAT_WEB_CLIENT_ID=…                     # printed
+    HAYAT_API_URL=http://hayat-api:7443       # see Wiring below
+    HAYAT_CONSOLE_URL=https://hayat.acme.com  # optional
     ```
 
-    `HAYAT_API_URL` is Hayat's service API, reachable from this server only. All the settings are described in
-    [Configuration](/docs/configuration#enterprise).
+    With `TABLETSGO_MODE=enterprise`, Tabletsgo refuses to start if a value is missing. It won't fall back to solo mode. Every setting
+    is described in [Configuration](/docs/configuration#enterprise).
   </Step>
-  <Step title="Start with the enterprise overlay">
+  <Step title="Start Tabletsgo">
     ```bash
-    docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d
+    docker run -d --name tabletsgo \
+      --env-file tabletsgo.env \
+      --network compose_default \
+      -p 3001:3000 \
+      -v tabletsgo-data:/app/data \
+      --restart unless-stopped \
+      ghcr.io/aidapedia/tabletsgo:latest
     ```
 
-    The overlay sets `TABLETSGO_MODE=enterprise`, and compose refuses to start while a required value is missing.
-  </Step>
-  <Step title="Sign in and set up the team">
-    Open the app and you are sent to Hayat to sign in. The `--admin` person is Tabletsgo's instance admin; if Hayat didn't know them
-    yet, they sign up at Hayat with that address first. In Hayat's console, create a workspace, add people, and grant
-    **Workspace owner (tabletsgo)** to whoever runs it.
+    `--network` puts it on Hayat's Docker network. Leave it out if Hayat runs on another server. Then open the address you
+    registered and sign in at Hayat. If Hayat doesn't know the `--admin` person yet, they sign up there with that email.
   </Step>
 </Steps>
 
-## Who can do what
+<H2 id="wiring">Wiring Tabletsgo to Hayat</H2>
 
-Every page and action asks Hayat for a permission, such as `connections.create` or `storage.manage`. Hayat answers from the roles
-granted on the workspace and below. Tabletsgo's contract brings four roles:
+Browsers sign in at `HAYAT_ISSUER`. The Tabletsgo server calls Hayat's api role at `HAYAT_API_URL`. It fetches tokens from
+`HAYAT_AUTH_URL`, which defaults to `HAYAT_ISSUER`.
 
-| Role                        | For                                                                                                                   |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Tabletsgo admin             | The admin area: modules, the mail server and updates. Granted at Hayat's root. It gives no access to any workspace's data. |
-| Workspace owner (tabletsgo) | Runs the workspace in Tabletsgo: its settings, notifications, storage, SSH hosts and every connection.                |
-| Connection manager          | Edit, export and open the connections where it is granted.                                                            |
-| Connection user             | Open the connections where it is granted.                                                                             |
+| Setup                       | `HAYAT_API_URL`          | `HAYAT_AUTH_URL`                     |
+| --------------------------- | ------------------------ | ------------------------------------ |
+| Same host, both in Docker   | `http://hayat-api:7443`  | `http://hayat-auth:8443`             |
+| Separate servers            | `http://10.0.4.12:7443`  | Leave out                            |
+| Trying it on one machine    | `http://hayat-api:7443`  | `http://hayat-auth:8443` (required)  |
 
-Opening a connection takes the `connection.open` permission at that connection: from owning it, a grant on it or above, or the
-roster of a group it is filed under. Only members of the workspace can ever open it. A connection's **Access** tab shows who can,
-and why, and links to Hayat to change it.
+- **Same host:** Tabletsgo must be on Hayat's network. Hayat's compose folder is named `compose`, so its network is
+  `compose_default`. Check the name with `docker network ls`.
+- **Separate servers:** keep the api role on a private network that only the Tabletsgo server can reach.
+- **One machine:** set `HAYAT_ISSUER=http://localhost:8443` and `PUBLIC_URL=http://localhost:3001`. Hayat needs `HAYAT_DEV=true`
+  to allow `http` addresses.
 
-<H2 id="different-addresses">When the server reaches Hayat elsewhere</H2>
+`HAYAT_AUTH_URL` only changes where the server fetches from. Tokens are still checked against `HAYAT_ISSUER`, so that value must
+match Hayat's own exactly.
 
-Inside Docker, `localhost` is the container itself. If this server reaches Hayat's sign-in at a different address than browsers do,
-set `HAYAT_AUTH_URL` to the address the server uses. Tokens still name `HAYAT_ISSUER`.
+<H2 id="team">Set up the team</H2>
+
+You manage people and access in Hayat's console. Tabletsgo shows them and links there.
+
+1. Create a tenant for each workspace, or use the ones you have.
+2. Add people to its roster. Only members can see a workspace's data.
+3. Grant **Workspace owner (tabletsgo)** to whoever runs it.
+4. Grant **Connection user** or **Connection manager** on a connection, or on a group it is filed under.
+
+| Role                        | Can                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| Tabletsgo admin             | Use the admin area: modules, mail and updates. It gives no access to workspace data.      |
+| Workspace owner (tabletsgo) | Run the workspace: settings, storage, SSH hosts and every connection.                     |
+| Connection manager          | Edit, export and open the connections where it is granted.                                |
+| Connection user             | Open the connections where it is granted.                                                 |
+
+A connection's **Access** tab shows who can open it and why.
+
+<H2 id="existing-hayat">With a Hayat you already run</H2>
+
+Registering only adds to Hayat. It adds a `tabletsgo` service, two clients and the four roles above, and leaves your other apps
+alone. People keep their accounts, and your tenants appear as workspaces. Register only once: the secret is printed only the first
+time. To change the address later, edit the clients under **Services → tabletsgo**.
+
+<H2 id="deploy-hayat">Deploy Hayat</H2>
+
+Skip this if you already run Hayat. Its repo has a compose file for every role:
+
+```bash
+git clone https://github.com/aidapedia/hayat.git && cd hayat/deploy/compose
+cp .env.example .env
+# in .env: HAYAT_MASTER_KEY=$(openssl rand -base64 32), HAYAT_ISSUER and HAYAT_CONSOLE_URL
+docker compose --profile console up -d
+```
+
+For production, remove `HAYAT_DEV=true` and point `HAYAT_SMTP_URL` at a real mail relay. Hayat's console also uses port `3000`, so
+publish Tabletsgo on a different port, as in the example above.
+
+<H2 id="when-it-fails">When it doesn't work</H2>
+
+- **Hayat refuses the sign-in redirect.** The address you opened isn't the `--app-url` you registered. Behind a proxy, also set
+  `PUBLIC_URL`.
+- **`ECONNREFUSED` or `ENOTFOUND hayat-api`.** The server can't reach Hayat. If you used container names, put Tabletsgo on Hayat's
+  network.
+- **Signed in, then sent back to sign in.** Check that `HAYAT_WEB_CLIENT_ID` is the web client's id, and that `HAYAT_ISSUER`
+  matches Hayat's exactly, including the scheme and port.
+
+More errors are in [Troubleshooting](/docs/troubleshooting).
 
 <Callout kind="note" title="Hayat must be reachable">
-  An enterprise instance asks Hayat on every request and caches answers for seconds, emptied as soon as Hayat reports a change. If
-  Hayat is down, people can't sign in or use the app until it is back. Tabletsgo never falls back to letting people in without it.
+  If Hayat is down, people can't sign in or use the app until it is back. Tabletsgo never lets people in without it.
 </Callout>

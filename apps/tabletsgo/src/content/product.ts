@@ -52,24 +52,21 @@ export const FEATURES: Feature[] = [
 ]
 export const IMAGE = 'ghcr.io/aidapedia/tabletsgo'
 
-// Guarded because the whole block gets pasted again to upgrade, and a new key would make saved credentials unreadable.
-const CREATE_KEY = '[ -f tabletsgo.env ] || echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" > tabletsgo.env'
+export type InstallMethod = { id: string; label: string; commands: string; logs: string; upgrade: string }
 
-export type InstallMethod = { id: string; label: string; commands: string; upgrade: string }
-
-// Both pull the published image, so the host needs Docker and nothing else: no clone, no Node.
+// The home page's solo install, kept the same as docs/getting-started/quick-start. Both pull the published image, so the
+// host needs Docker and nothing else, and with no settings it starts solo and generates its key into the volume.
+// Enterprise takes more than fits here; the home page links to its guide.
 export const INSTALL_METHODS: InstallMethod[] = [
   {
     id: 'run',
     label: 'Docker run',
-    commands: `${CREATE_KEY}
-
-docker run -d --name tabletsgo \\
-  --env-file tabletsgo.env \\
+    commands: `docker run -d --name tabletsgo \\
   -p 3000:3000 \\
   -v tabletsgo-data:/app/data \\
   --restart unless-stopped \\
   ${IMAGE}:latest`,
+    logs: 'docker logs tabletsgo',
     upgrade: `docker pull ${IMAGE}:latest
 docker rm -f tabletsgo
 # then the docker run command again`,
@@ -77,13 +74,10 @@ docker rm -f tabletsgo
   {
     id: 'compose',
     label: 'Docker Compose',
-    commands: `${CREATE_KEY}
-
-cat > compose.yaml <<'EOF'
+    commands: `cat > compose.yaml <<'EOF'
 services:
   tabletsgo:
     image: ${IMAGE}:latest
-    env_file: tabletsgo.env
     ports:
       - "3000:3000"
     volumes:
@@ -94,6 +88,7 @@ volumes:
 EOF
 
 docker compose up -d`,
+    logs: 'docker compose logs tabletsgo',
     upgrade: `docker compose pull
 docker compose up -d`,
   },
