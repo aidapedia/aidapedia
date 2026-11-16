@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { parseChanges, type Change } from '../lib/releases'
+import { parseRelease, type ReleaseNotes } from '../lib/releases'
 import { readCache, writeCache } from '../lib/sessionCache'
 
-export type Release = { version: string; date: string; url: string; changes: Change[] }
+export type Release = { version: string; date: string; url: string; notes: ReleaseNotes }
 export type ReleasesState = { releases: Release[] | null; failed: boolean }
 
 async function fetchReleases(slug: string, signal: AbortSignal): Promise<Release[]> {
@@ -13,14 +13,15 @@ async function fetchReleases(slug: string, signal: AbortSignal): Promise<Release
     version: release.tag_name,
     date: release.published_at,
     url: release.html_url,
-    changes: parseChanges(release.body ?? ''),
+    notes: parseRelease(release.body ?? ''),
   }))
 }
 
 // Releases come from GitHub at view time, so publishing one is all it takes to update the page.
 // `slug` is the repo, as owner/name.
 export function useReleases(slug: string): ReleasesState {
-  const key = `releases:${slug}`
+  // The version in the key retires a cached copy of an older shape.
+  const key = `releases:v2:${slug}`
   const [releases, setReleases] = useState<Release[] | null>(() => readCache(key))
   const [failed, setFailed] = useState(false)
 
