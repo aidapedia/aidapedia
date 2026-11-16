@@ -7,10 +7,10 @@ import SiteHeader from '@shared/components/SiteHeader'
 import { REPO_URL } from '@shared/content/tabletsgo'
 import { useReveal } from '@shared/hooks/useReveal'
 import { MENU } from '@/content/product'
-import type { GitHubStats } from '@/hooks/useGitHubStats'
+import type { GitHubStats } from '@shared/hooks/useGitHubStats'
 import Brand from './Brand'
 import SiteFooter from './SiteFooter'
-import StarCount from './StarCount'
+import StarCount from '@shared/components/StarCount'
 
 export default function SiteShell({ stats, children }: { stats: GitHubStats | null; children: ReactNode }) {
   const { pathname } = useLocation()

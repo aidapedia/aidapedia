@@ -1,0 +1,57 @@
+---
+title: Database
+description: "PostgreSQL by default, YugabyteDB through its own migration history, and Redis for shared rate limits."
+keywords: postgres postgresql yugabyte yugabytedb redis HAYAT_DATABASE_URL HAYAT_DATABASE_ENGINE migrations region
+---
+
+Hayat keeps everything in one SQL database: accounts, sessions, tenants, the tree, roles and grants, contracts, OAuth clients and the
+encrypted signing keys. Each module owns its tables.
+
+## PostgreSQL
+
+The default, and what the compose file runs (PostgreSQL 17). Point `HAYAT_DATABASE_URL` at an empty database and run `hayat migrate`:
+
+```dotenv title=".env"
+HAYAT_DATABASE_URL=postgres://hayat:secret@db.internal:5432/hayat?sslmode=require
+```
+
+Hayat needs no extensions, and uses no triggers, `LISTEN/NOTIFY`-only paths or advisory locks: a lease row decides which `worker`
+runs, so nothing depends on a session staying on one connection.
+
+## YugabyteDB
+
+The schema is written to run on YugabyteDB from day one: regional tables put the region first in their primary key, ids are UUIDv7,
+busy tables have no sequences, and every transaction retries on a serialization failure. A separate migration history differs only in
+index sharding, partitions and tablespaces.
+
+```dotenv title=".env"
+HAYAT_DATABASE_URL=postgres://yugabyte@yb.internal:5433/hayat
+HAYAT_DATABASE_ENGINE=yugabyte
+```
+
+<Callout kind="warning" title="One region today">
+  This version runs one region (`HAYAT_REGION=default`). Multi-region on YugabyteDB is planned; until then, YugabyteDB is for
+  compatibility, not for spreading Hayat across regions.
+</Callout>
+
+To try it, the compose file's `yugabyte` profile starts a single node on `:5433`:
+
+```bash
+docker compose --profile yugabyte up yugabyte
+```
+
+## Redis
+
+Optional. Hayat uses Redis only for the rate-limit counters on sign-in, sign-up and password reset. Without `HAYAT_REDIS_URL` each
+process counts on its own, which is right for one `auth` pod. With several, set it so a limit means the same everywhere.
+
+```dotenv title=".env"
+HAYAT_REDIS_URL=redis://redis:6379/0
+```
+
+Decisions are cached in each `api` pod's memory, not in Redis. A shared decision cache is planned.
+
+## Backups
+
+Back up the database as you would any production PostgreSQL. A restore needs the same `HAYAT_MASTER_KEY` the database was written with,
+since the signing keys in it are encrypted with it. Keep the two apart, and both safe.

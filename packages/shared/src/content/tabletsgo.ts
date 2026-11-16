@@ -1,4 +1,3 @@
-import type { ComponentType } from 'react'
 import {
   CloudIcon,
   CodeIcon,
@@ -10,19 +9,15 @@ import {
   TopicIcon,
   TreeIcon,
   WorkflowIcon,
-  type IconProps,
 } from '../components/icons'
+import type { ProductScreens, Screen } from './screens'
 import { TABLETSGO_URL } from './sites'
-
-type Icon = ComponentType<IconProps>
 
 export const REPO = 'aidapedia/tabletsgo'
 export const REPO_URL = `https://github.com/${REPO}`
 export const SPONSOR_URL = 'https://github.com/sponsors/aidapedia'
 export const docUrl = (path: string) => `${REPO_URL}/blob/HEAD/${path}`
 export const screenshotUrl = (file: string) => `${TABLETSGO_URL}screenshots/${file}`
-
-export type Screen = { id: string; label: string; title: string; icon: Icon; file: string; alt: string; caption: string }
 
 export const SCREENS: Screen[] = [
   {
@@ -116,6 +111,8 @@ export const SCREENS: Screen[] = [
     caption: "Every database in a workspace on one page, with credentials encrypted at rest.",
   },
 ]
+
+export const PRODUCT_SCREENS: ProductScreens = { screens: SCREENS, url: screenshotUrl }
 
 // Real sponsors go here: { name, url, logo }. The grid fills its remaining cells with open slots.
 export const SPONSORS: { name: string; url: string; logo: string }[] = []

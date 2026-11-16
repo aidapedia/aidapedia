@@ -1,0 +1,83 @@
+---
+title: Run with Docker Compose
+description: "The compose file in the Hayat repo, service by service, and how to run it on a server."
+keywords: docker compose deploy env file profile console yugabyte mailpit redis postgres HAYAT_VERSION
+---
+
+`deploy/compose/docker-compose.yml` in the Hayat repo runs every role in its own container on one machine, so they scale and fail apart.
+It is meant for development and small installs. For high availability, run the same image per role behind a load balancer, with
+PostgreSQL and Redis managed separately (see [Production checklist](/docs/production)).
+
+## The services
+
+| Service | Image | Runs |
+| --- | --- | --- |
+| `postgres` | `postgres:17` | Hayat's database, with a healthcheck the migration waits for |
+| `redis` | `redis:7.4` | Rate-limit counters shared by every `auth` pod |
+| `mailpit` | `axllent/mailpit` | Catches outgoing mail on `:8025`, until you set a real relay |
+| `hayat-migrate` | `ghcr.io/aidapedia/hayat` | `migrate`, once, before anything else starts |
+| `hayat-auth` | `ghcr.io/aidapedia/hayat` | `serve --role=auth` on `:8443` |
+| `hayat-admin` | `ghcr.io/aidapedia/hayat` | `serve --role=admin` on `:8080` |
+| `hayat-api` | `ghcr.io/aidapedia/hayat` | `serve --role=api` on `:7443` |
+| `hayat-worker` | `ghcr.io/aidapedia/hayat` | `serve --role=worker` |
+| `hayat-console` | `ghcr.io/aidapedia/hayat-console` | The console on `:3000`, only with `--profile console` |
+
+Every `hayat-*` service reads `.env` and gets the database, Redis and mail addresses from the compose file itself:
+
+```yaml title="docker-compose.yml (excerpt)"
+x-hayat: &hayat
+  image: ghcr.io/aidapedia/hayat:${HAYAT_VERSION:-latest}
+  env_file: .env
+  environment:
+    HAYAT_DATABASE_URL: postgres://hayat:${POSTGRES_PASSWORD:-hayat}@postgres:5432/hayat?sslmode=disable
+    HAYAT_REDIS_URL: redis://redis:6379/0
+    HAYAT_SMTP_URL: ${HAYAT_SMTP_URL:-smtp://mailpit:1025}
+  depends_on:
+    hayat-migrate:
+      condition: service_completed_successfully
+```
+
+The roles start only once `hayat-migrate` has finished, so a new image never runs against an old schema.
+
+## The .env file
+
+Copy `.env.example` to `.env` beside the compose file. On a server, change at least these:
+
+```dotenv title=".env"
+# openssl rand -base64 32
+HAYAT_MASTER_KEY=
+HAYAT_ISSUER=https://auth.example.com
+HAYAT_CONSOLE_URL=https://console.example.com
+HAYAT_DEV=false
+HAYAT_SMTP_URL=smtp://user:pass@smtp.example.com:587
+HAYAT_MAIL_FROM=Hayat <no-reply@example.com>
+# something long and random
+POSTGRES_PASSWORD=
+```
+
+Every other setting has a default. They are all in the [configuration reference](/docs/configuration).
+
+## Common commands
+
+```bash
+docker compose up -d                          # every role, without the console
+docker compose --profile console up -d        # and the console
+docker compose logs hayat-auth | grep setup   # the first-admin link
+docker compose exec hayat-auth hayat setup-link   # a fresh one
+docker compose run --rm hayat-migrate migrate --status
+HAYAT_VERSION=0.3.0 docker compose up -d      # pin a release instead of latest
+```
+
+## Pinning a version
+
+The images are tagged with each release (`0.3.0`), its minor line (`0.3`) and `latest`, for amd64 and arm64. Set `HAYAT_VERSION` in
+`.env` to stay on one; both `hayat` and `hayat-console` follow it. See [Upgrading](/docs/upgrading).
+
+## Testing against YugabyteDB
+
+The compose file has a `yugabyte` profile for compatibility checks. It starts a single YugabyteDB node on `:5433`; point
+`HAYAT_DATABASE_URL` at it and set `HAYAT_DATABASE_ENGINE=yugabyte`. See [Database](/docs/database).
+
+```bash
+docker compose --profile yugabyte up yugabyte
+```

@@ -19,6 +19,7 @@ import {
   WorkflowIcon,
   type IconProps,
 } from '@shared/components/icons'
+import type { FlowStep } from '@shared/components/flow/Walkthrough'
 
 type Icon = ComponentType<IconProps>
 
@@ -94,8 +95,6 @@ docker compose up -d`,
   },
 ]
 
-export type FlowLine = { text: string; meta?: string; prompt?: boolean }
-export type FlowStep = { id: string; title: string; detail: string; panel: string; icon: Icon; lines: FlowLine[] }
 
 // The walkthrough on the home page. `lines` are what its panel plays for the step; the terminal's are the image's real boot log.
 export const FLOW_STEPS: FlowStep[] = [
@@ -172,6 +171,18 @@ export const SUPPORTED_ENGINES: Engine[] = [
     ],
   },
   {
+    id: 'mysql',
+    name: 'MySQL',
+    kind: 'Relational, over the network',
+    detail: 'The same relational console for MySQL, on your network or behind a bastion.',
+    highlights: [
+      'A spreadsheet-style grid with staged edits',
+      'SQL editor with history and saved queries',
+      'A visual schema designer that rolls back by version',
+      'Scheduled mysqldump backups to any S3-compatible bucket',
+    ],
+  },
+  {
     id: 'sqlite',
     name: 'SQLite',
     kind: 'A database file on this server',
@@ -211,20 +222,19 @@ export const SUPPORTED_ENGINES: Engine[] = [
 
 // `values` follow SUPPORTED_ENGINES' order.
 export const ENGINE_SUPPORT: { label: string; values: (boolean | string)[] }[] = [
-  { label: 'Browse', values: ['Tables', 'Tables', 'Key tree', 'Topics'] },
-  { label: 'Console', values: ['SQL', 'SQL', 'Commands', 'Kafka commands'] },
-  { label: 'Edit rows in the grid', values: [true, true, false, false] },
-  { label: 'Schema designer', values: [true, true, false, false] },
-  { label: 'Query analysis', values: [true, true, false, false] },
-  { label: 'Export and import rows', values: [true, true, false, false] },
-  { label: 'Scheduled backups and restore', values: [true, true, false, false] },
-  { label: 'SSH tunnels', values: [true, false, true, true] },
-  { label: 'Workflows', values: [true, true, true, true] },
-  { label: 'Dashboards', values: [true, true, true, true] },
+  { label: 'Browse', values: ['Tables', 'Tables', 'Tables', 'Key tree', 'Topics'] },
+  { label: 'Console', values: ['SQL', 'SQL', 'SQL', 'Commands', 'Kafka commands'] },
+  { label: 'Edit rows in the grid', values: [true, true, true, false, false] },
+  { label: 'Schema designer', values: [true, true, true, false, false] },
+  { label: 'Query analysis', values: [true, true, true, false, false] },
+  { label: 'Export and import rows', values: [true, true, true, false, false] },
+  { label: 'Scheduled backups and restore', values: [true, true, true, false, false] },
+  { label: 'SSH tunnels', values: [true, true, false, true, true] },
+  { label: 'Workflows', values: [true, true, true, true, true] },
+  { label: 'Dashboards', values: [true, true, true, true, true] },
 ]
 
 export const PLANNED_ENGINES = [
-  { id: 'mysql', name: 'MySQL' },
   { id: 'mariadb', name: 'MariaDB' },
   { id: 'mongodb', name: 'MongoDB' },
 ]

@@ -6,12 +6,12 @@ export const COMPARE_CHECKED = 'November 2026'
 export const COMPARE_ROWS: { label: string; tabletsgo: boolean | string }[] = [
   { label: 'Runs as', tabletsgo: 'Self-hosted web app, in Docker' },
   { label: 'License and price', tabletsgo: 'Free, Apache 2.0' },
-  { label: 'Databases', tabletsgo: 'PostgreSQL, SQLite, Redis, Kafka' },
+  { label: 'Databases', tabletsgo: 'PostgreSQL, MySQL, SQLite, Redis, Kafka' },
   { label: 'Browse and edit rows', tabletsgo: true },
   { label: 'SQL editor', tabletsgo: true },
   { label: 'Schema diagram', tabletsgo: 'Visual designer' },
   { label: 'Run schema changes', tabletsgo: 'Staged, versioned, with rollback' },
-  { label: 'Backups', tabletsgo: 'Scheduled dumps of PostgreSQL and SQLite' },
+  { label: 'Backups', tabletsgo: 'Scheduled dumps of PostgreSQL, MySQL and SQLite' },
   { label: 'Dashboards', tabletsgo: true },
   { label: 'Workflows', tabletsgo: 'Schedule or webhook triggers' },
   { label: 'SSH tunnels', tabletsgo: true },
@@ -45,7 +45,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     pickThem: [
       'You only need a diagram, and would rather not give a tool database credentials',
-      'Your database is MySQL, SQL Server, MariaDB, CockroachDB or ClickHouse',
+      'Your database is SQL Server, MariaDB, CockroachDB or ClickHouse',
       'You want AI to generate DDL for another SQL dialect',
       'You want to edit a diagram together in real time',
     ],
@@ -87,7 +87,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     pickThem: [
       'You need to recover PostgreSQL to a moment between two backups',
-      'You need backups of MySQL, MariaDB or MongoDB',
+      'You need backups of MariaDB or MongoDB',
       'You store backups in Google Drive, Dropbox, SFTP or a NAS, not only S3-compatible storage',
       'You want success and failure alerts in Slack, Telegram or Discord. Tabletsgo emails on failure',
       'You need audit logs',
@@ -131,7 +131,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     pickThem: [
       'You want a native app on your own machine, or on an iPhone or iPad',
-      'You use MySQL, SQL Server, MongoDB, Oracle or one of its many other engines',
+      'You use SQL Server, MongoDB, Oracle or one of its many other engines',
       'You work alone and don\'t want to run a server',
     ],
     learn: [
@@ -217,7 +217,7 @@ export const COMPETITORS: Competitor[] = [
     ],
     pickThem: [
       'You want an AI assistant that writes queries and explains schemas',
-      'You use MySQL, SQL Server, MongoDB or ClickHouse',
+      'You use SQL Server, MongoDB or ClickHouse',
       'You want a desktop app, or a workspace you don\'t host yourself',
       'You need SSO with SAML, or audit logs',
     ],

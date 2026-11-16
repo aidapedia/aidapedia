@@ -102,7 +102,7 @@ export default function HomePage() {
                   <span>Tabl<span className="text-accent">et</span>sgo</span>
                 </h3>
                 <p className="mt-3 max-w-[62ch] text-pretty leading-relaxed text-ink-dim">
-                  Our first open-source product, built to support practical workflows and everyday engineering needs. A self-hosted console for PostgreSQL, SQLite, Redis and Kafka.
+                  Our first open-source product, built to support practical workflows and everyday engineering needs. A self-hosted console for PostgreSQL, MySQL, SQLite, Redis and Kafka.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">

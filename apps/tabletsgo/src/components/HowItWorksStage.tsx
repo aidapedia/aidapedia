@@ -1,34 +1,16 @@
-import type { CSSProperties } from 'react'
-import { FLOW_STEPS, SUPPORTED_ENGINES } from '@/content/product'
+import { STAGGER_MS } from '@shared/components/flow/Walkthrough'
+import Wires from '@shared/components/flow/Wires'
+import { CheckIcon, Logo } from '@shared/components/icons'
+import { SUPPORTED_ENGINES } from '@/content/product'
 import DbLogo from './DbLogo'
-import { CheckIcon, Logo, PauseIcon, PlayIcon } from '@shared/components/icons'
 
 const TEAM = ['M', 'R', 'T']
 const TEAM_ROWS = [16.7, 50, 83.3]
 const ENGINE_ROWS = [12.5, 37.5, 62.5, 87.5]
 const INSTANCE = ['Metadata migrated', 'Admin and workspace', 'Credentials encrypted', 'Team signed in']
-const STAGGER_MS = 320
 
-// Fills its cell and is stretched to it, so every stroke opts out of scaling: the dots stay round at any width.
-function Wires({ rows, side, lit, flowing, stagger }: { rows: number[]; side: 'in' | 'out'; lit: boolean; flowing: boolean; stagger: boolean }) {
-  return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" aria-hidden="true" className="h-full w-full">
-      {rows.map((y, i) => {
-        const d = side === 'out' ? `M0 50 C50 50 50 ${y} 100 ${y}` : `M0 ${y} C50 ${y} 50 50 100 50`
-        const delay = { transitionDelay: stagger ? `${i * STAGGER_MS}ms` : '0ms' }
-        return (
-          <g key={y}>
-            <path d={d} vectorEffect="non-scaling-stroke" className="stroke-edge-strong [stroke-dasharray:4_5]" />
-            <path d={d} vectorEffect="non-scaling-stroke" style={delay} className={`stroke-accent/50 transition-opacity duration-300 ${lit ? 'opacity-100' : 'opacity-0'}`} />
-            {flowing && <path d={d} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeWidth={3} className="flow-dots stroke-accent [stroke-dasharray:0.5_23.5]" />}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-function Diagram({ active }: { active: number }) {
+/** Tabletsgo's picture of each step: your team, your server and your databases, lit as the step reaches them. */
+export default function HowItWorksStage({ active }: { active: number }) {
   const connecting = active === 2
 
   return (
@@ -84,49 +66,6 @@ function Diagram({ active }: { active: number }) {
           </li>
         ))}
       </ul>
-    </div>
-  )
-}
-
-function Panel({ active, playing, onToggle }: { active: number; playing: boolean; onToggle: () => void }) {
-  const step = FLOW_STEPS[active]
-
-  return (
-    <div className="flex min-w-0 flex-col border-edge max-lg:border-t lg:border-l">
-      <div className="flex min-h-12 items-center justify-between gap-3 border-b border-edge py-1.5 pl-4 pr-2">
-        <span className="inline-flex items-center gap-2 text-xs text-ink-dim">
-          <step.icon width={14} height={14} aria-hidden="true" />
-          {step.panel}
-        </span>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-soft bg-white/6 px-3 text-xs font-medium transition-colors hover:bg-white/10 motion-reduce:hidden"
-        >
-          {playing ? <PauseIcon width={13} height={13} aria-hidden="true" /> : <PlayIcon width={13} height={13} aria-hidden="true" />}
-          {playing ? 'Pause' : 'Play'}
-        </button>
-      </div>
-      <ul key={step.id} aria-hidden="true" className="grid min-h-44 flex-1 content-start gap-3 p-4 font-mono text-xs leading-relaxed">
-        {step.lines.map((line, i) => (
-          <li key={line.text} style={{ '--flow-delay': `${i * STAGGER_MS}ms` } as CSSProperties} className="flow-rise flex justify-between gap-4 [overflow-wrap:anywhere]">
-            <span className={line.prompt || line.meta ? 'text-ink' : 'text-ink-dim'}>
-              {line.prompt && <span className="text-accent">$ </span>}
-              {line.text}
-            </span>
-            {line.meta && <span className="shrink-0 text-right text-ink-dim">{line.meta}</span>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-export default function HowItWorksStage({ active, playing, onToggle }: { active: number; playing: boolean; onToggle: () => void }) {
-  return (
-    <div className="grid overflow-hidden rounded-card border border-edge bg-card lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-      <Diagram active={active} />
-      <Panel active={active} playing={playing} onToggle={onToggle} />
     </div>
   )
 }

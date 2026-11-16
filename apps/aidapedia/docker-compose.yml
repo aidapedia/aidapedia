@@ -1,8 +1,9 @@
-# Aidapedia's site on a domain of its own. Tabletsgo's site is deployed apart
-# (apps/tabletsgo/docker-compose.yml); the homepage links to it and loads its screenshots.
+# Aidapedia's site on a domain of its own. Tabletsgo's and Hayat's sites are deployed apart
+# (apps/tabletsgo/docker-compose.yml, apps/hayat/docker-compose.yml); the homepage links to
+# them and loads Tabletsgo's screenshots and Hayat's logo.
 #
 #   cd apps/aidapedia
-#   TABLETSGO_URL=https://tabletsgo.example.com/ docker compose up -d --build
+#   TABLETSGO_URL=https://tabletsgo.example.com/ HAYAT_URL=https://hayat.example.com/ docker compose up -d --build
 #
 # Both apps on one domain instead: the root docker-compose.yml.
 services:
@@ -14,6 +15,7 @@ services:
         # This site's own address; a path is enough when it is served from the domain root.
         AIDAPEDIA_URL: ${AIDAPEDIA_URL:-/}
         TABLETSGO_URL: ${TABLETSGO_URL:?set TABLETSGO_URL (where Tabletsgo's site is reached, e.g. https://tabletsgo.example.com/)}
+        HAYAT_URL: ${HAYAT_URL:?set HAYAT_URL (where Hayat's site is reached, e.g. https://hayat.example.com/)}
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped

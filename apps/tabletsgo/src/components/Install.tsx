@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SUPPORT_EMAIL } from '@shared/content/company'
 import { IMAGE, INSTALL_METHODS } from '@/content/product'
-import CommandBlock from './CommandBlock'
+import CommandBlock from '@shared/components/CommandBlock'
 import SectionHeading from '@shared/components/SectionHeading'
 
 const MONO = 'rounded bg-white/6 px-1.5 py-0.5 font-mono text-[0.85em] text-ink'

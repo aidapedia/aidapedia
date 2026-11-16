@@ -1,0 +1,130 @@
+---
+title: Plug a service in
+description: "Register your service, publish its contract, mirror its resources into the tree, and ask before it acts."
+keywords: service register namespace credentials contract publish mirror resource upsert delete check lookup watch read your writes
+---
+
+A **service** is an application that files resources in Hayat's tree and asks for decisions about them. Plugging one in takes four
+steps, and the [SDKs](/docs/sdks) cover the code side of each.
+
+<Steps>
+  <Step title="Register it">
+    An instance admin opens the console → **Services** → **Register service**. You get a namespace (`billing`), API credentials (a
+    client id and secret, shown once), and a first owner. Owners approve contracts that touch the namespace, name other owners, rotate
+    the secret and manage the service's sign-in clients.
+  </Step>
+  <Step title="Publish its contract">
+    The contract declares the resource types the service files in the tree, the permissions that mean something on them, and the roles
+    it suggests. See below, and the [contract reference](/docs/contracts) for every field.
+  </Step>
+  <Step title="Mirror its resources">
+    When the service creates, renames, moves or deletes one of its things, it writes the matching node in the tree.
+  </Step>
+  <Step title="Ask before acting">
+    Before showing or changing something, it asks whether this person holds the permission on that node.
+  </Step>
+</Steps>
+
+## Publish a contract
+
+```yaml title="contract.yaml"
+service: billing
+version: 1
+resource_types:
+  - name: ledger
+    parents: [hayat/tenant, hayat/group]
+    # Placement: everyone in the group a ledger is filed in (sub-teams included),
+    # and anyone directly on a group further up, may view it.
+    access: { permission: ledger.view, via_placement: true, requires_membership: true }
+permissions:
+  - { key: ledger.view, scope: ledger, label: View ledgers, description: See entries and balances }
+  - { key: ledger.post, scope: ledger, label: Post entries, description: Post journal entries }
+default_roles:
+  - { slug: accountant, name: Accountant, permissions: [ledger.view, ledger.post] }
+```
+
+Short names are qualified: `ledger` is stored as `billing/ledger`, `ledger.view` as `billing.ledger.view`. Publish it in the console,
+or from CI with the service's own credentials through `SchemaService.PublishContract`:
+
+```ts title="publish.ts"
+import { readFile } from 'node:fs/promises'
+
+const res = await hayat.schema.publishContract({ manifest: await readFile('contract.yaml', 'utf8') })
+console.log(res.version, res.status)   // 1 active
+```
+
+A version goes live as soon as it is published. A later version may only add. The one exception to "live at once": a version that files
+your types under another service's types waits until that service's owners approve it on their service's page.
+
+## Mirror resources
+
+Write a node when the resource is created, and keep it in step. `UpsertResource` is idempotent: the same type and id renames, re-owns or
+re-files the node.
+
+<CodeTabs>
+  <Tab label="Node">
+    ```ts title="ledgers.ts"
+    import { ref } from '@aidapedia/hayat'
+
+    // Filed in a group (by node id), owned by the person who made it.
+    await hayat.upsertResource(ref('billing/ledger', ledger.id), ledger.name, { nodeId: groupNodeId }, userId)
+
+    // Filed directly under a tenant.
+    await hayat.upsertResource(ref('billing/ledger', ledger.id), ledger.name, ref('hayat/tenant', tenantId), userId)
+
+    await hayat.deleteResource(ref('billing/ledger', ledger.id))
+    ```
+  </Tab>
+  <Tab label="Go">
+    ```go title="ledgers.go"
+    hz.UpsertResource(ctx, hayat.Ref("billing/ledger", id), "Ledger 2026", hayat.Resource{NodeID: groupID}, ownerID)
+    hz.UpsertResource(ctx, hayat.Ref("billing/ledger", id), "Ledger 2026", hayat.Ref("hayat/tenant", tenantID), ownerID)
+    hz.DeleteResource(ctx, hayat.Ref("billing/ledger", id))
+    ```
+  </Tab>
+</CodeTabs>
+
+A service writes only its own types. Deleting a node is refused while anything is filed under it. Make the row and the node change
+together: when creating, write the node and roll your row back if that fails; when deleting, delete the node first.
+
+## Ask for decisions
+
+<CodeTabs>
+  <Tab label="Node">
+    ```ts title="ledgers.ts"
+    if (!(await hayat.check(userId, 'billing.ledger.post', ref('billing/ledger', id)))) {
+      return res.status(403).end()
+    }
+
+    // For a list: the ids of every ledger this person may view in a tenant.
+    const ids = await hayat.lookup(userId, 'billing.ledger.view', 'billing/ledger', tenantId)
+    ```
+  </Tab>
+  <Tab label="Go">
+    ```go title="ledgers.go"
+    ok, err := hz.Check(ctx, userID, "billing.ledger.post", hayat.Ref("billing/ledger", id))
+    ids, err := hz.Lookup(ctx, userID, "billing.ledger.view", "billing/ledger", tenantID)
+    ```
+  </Tab>
+</CodeTabs>
+
+An unknown resource is a "no", not an error. For drawing a page's buttons, `AuthzService.PermissionsAt` returns everything a person may
+do at one node in one call; for an access list, `LookupSubjects` returns who really holds a permission there, through every route. See
+the [service API](/docs/service-api).
+
+## Keep caches honest
+
+The SDKs cache each answer for 10 seconds by default. Run `watch` once per process: it streams every policy change and drops cached
+answers for the tenant that changed (all of them for a global change), so a revoked grant stops working at once rather than after the
+cache expires.
+
+```ts title="server.ts"
+void hayat.watch()          // Node: runs until the process ends, reconnecting as needed
+```
+
+```go title="main.go"
+go hz.Watch(ctx)            // Go
+```
+
+For two seconds after one of your writes, the SDKs ask Hayat for at least the revision that write produced, so a person who just created
+a ledger can open it straight away. Never keep your own copy of an answer outside the SDK: it would outlive a revoked grant.

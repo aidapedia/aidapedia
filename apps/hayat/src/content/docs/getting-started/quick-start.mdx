@@ -1,0 +1,77 @@
+---
+title: Quick start
+description: "Every role running on your machine with Docker Compose, and the first admin created, in a few minutes."
+keywords: install docker compose setup link first admin console mailpit localhost
+---
+
+import { KeyIcon, TreeIcon } from '@shared/components/icons'
+
+This runs Hayat on one machine for a try-out: every role in its own container, with PostgreSQL, Redis and Mailpit to catch the emails
+it sends. It needs Docker with Compose, Git, and OpenSSL to generate a key.
+
+<Steps>
+  <Step title="Get the compose file">
+    The compose file and its settings template live in the Hayat repo, under `deploy/compose`.
+
+    ```bash
+    git clone https://github.com/aidapedia/hayat.git
+    cd hayat/deploy/compose
+    cp .env.example .env
+    ```
+  </Step>
+  <Step title="Set the master key">
+    `HAYAT_MASTER_KEY` encrypts the signing keys at rest, and Hayat refuses to start without one. It is 32 random bytes in base64:
+
+    ```bash
+    sed -i.bak "s|^HAYAT_MASTER_KEY=.*|HAYAT_MASTER_KEY=$(openssl rand -base64 32)|" .env
+    ```
+
+    Keep a copy somewhere safe. Losing it means re-issuing every key, which signs everyone out.
+  </Step>
+  <Step title="Start it">
+    ```bash
+    docker compose --profile console up -d
+    ```
+
+    `hayat-migrate` runs first and applies the database migrations, then the four roles start. Without `--profile console` you get
+    everything but the web console.
+  </Step>
+  <Step title="Create the first admin">
+    An instance with no admin logs a one-time link when its `auth` role starts:
+
+    ```bash
+    docker compose logs hayat-auth | grep setup
+    # → No admin yet. Open this link to create the first one (valid 24 hours): http://localhost:8443/setup?…
+    ```
+
+    Open it, and enter your name, email and a password of at least 10 characters. If it has expired, print a new one with
+    `docker compose exec hayat-auth hayat setup-link`.
+  </Step>
+  <Step title="Open the console">
+    Go to [http://localhost:3000](http://localhost:3000) and sign in. As the instance admin you can register services, create tenants
+    and define roles. Emails Hayat sends (sign-up links, password resets) land in Mailpit at
+    [http://localhost:8025](http://localhost:8025).
+  </Step>
+</Steps>
+
+## What is running
+
+| Container | Address | What it is |
+| --- | --- | --- |
+| `hayat-auth` | `http://localhost:8443` | Sign-in pages and the OpenID provider (the issuer) |
+| `hayat-admin` | `http://localhost:8080` | The admin API, which the console calls |
+| `hayat-api` | `localhost:7443` | The service API your services call |
+| `hayat-worker` | none | Mail, clean-up and key rotation |
+| `hayat-console` | `http://localhost:3000` | The web console |
+| `postgres` | `127.0.0.1:55432` | Hayat's database |
+| `mailpit` | `http://localhost:8025` | Catches outgoing mail |
+
+The `.env` from the template sets `HAYAT_DEV=true`, which is what allows an `http://` issuer. Never leave it on for a deployment other
+people reach: read the [production checklist](/docs/production) first.
+
+## Next
+
+<Cards>
+  <Card to="/docs/concepts" icon={TreeIcon} title="Concepts">What tenants, groups, roles and grants are, before you create any.</Card>
+  <Card to="/docs/connect-an-app" icon={KeyIcon} title="Connect an app">Sign people in to your own application through Hayat.</Card>
+</Cards>

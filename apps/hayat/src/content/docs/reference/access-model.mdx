@@ -1,0 +1,72 @@
+---
+title: How decisions are made
+description: "The one rule every answer follows: owners, grants, placement and membership, walked from the root down."
+keywords: decision rule check authz owner grant inherit placement membership admin union deny reason cache revision sibling
+---
+
+Every answer Hayat gives comes from one rule, in one place in its code. Given a person, a permission and a node, it walks the chain from
+the root down to that node and stops at the first thing that allows it.
+
+## The rule
+
+<Steps>
+  <Step title="Owners">Owning any node on the chain allows every permission there and below.</Step>
+  <Step title="Grants">
+    A grant counts on its own node always, and below it only when it inherits. It counts when it names the person, or a group (or the
+    tenant) they count in. Expired grants don't count.
+  </Step>
+  <Step title="Placement">
+    When the node's type opens by placement, its access permission is held by whoever counts in the nearest group above it (its own
+    roster, or a group nested under it), and by whoever is directly on the roster of a group further up. The tenant never counts here.
+  </Step>
+  <Step title="Membership">A type that requires membership allows nothing to someone who isn't on the tenant's roster, whatever was granted.</Step>
+  <Step title="Instance admins">Hold Hayat's own `hayat.*` permissions everywhere, and never a service's.</Step>
+  <Step title="Unknown keys">A permission the catalog doesn't know is dropped, never honoured.</Step>
+</Steps>
+
+## Belonging goes up, access goes down
+
+Take Acme's org chart, with a ledger filed in Payment:
+
+```text title="Acme"
+Acme (tenant)                   owner: alice
+└─ Engineering                  roster: bob
+   ├─ Payment                   roster: paula, pete, priya
+   │  └─ Ledger 2026 (billing/ledger, opens by placement for ledger.view)
+   └─ Promo                     roster: leo, mia
+```
+
+| Who | May view Ledger 2026? | Why |
+| --- | --- | --- |
+| alice | Yes | **Owner** of Acme, a node on the chain. |
+| pete | Yes | **Placement**: on Payment, the nearest group above the ledger. |
+| bob | Yes | **Placement**: directly on Engineering, a group further up. |
+| mia | No | Promo is a sibling of Payment. She counts in Engineering through Promo, but placement only counts direct rosters above the nearest group, so sibling teams never open each other's things. |
+
+Now grant the Accountant role **to** Engineering, **on** the tenant, inheriting. Mia counts in Engineering (through Promo), so the grant
+reaches her and she may view the ledger. A grant **on** Payment, by contrast, would reach nothing above Payment.
+
+## Union only
+
+There are no deny rules. Access is the union of everything that allows it, so adding a grant can only open things and removing one can
+only close them. That keeps answers cacheable (a cache entry can't be made wrong by an unrelated rule) and explainable.
+
+## Every answer can say why
+
+Ask `Check` with `explain: true` and the answer carries a **reason**: the first thing up the chain that gave the permission, its kind
+(`owner`, `grant`, `placement` or `admin`), the node, the role and who it was granted to, and the same in a sentence. The console's
+access lists are built from these.
+
+## Caches and revisions
+
+Every policy write bumps a revision in the same transaction: the tenant's, or a global one for the catalog, roles, the root, service
+grants and account status. Answers are cached under the revisions they were computed at, so any change in a tenant makes new keys and
+old entries are never read again.
+
+Services cache answers too, through the [SDKs](/docs/sdks), and empty them from the Watch stream. To read your own write, a request can
+ask for at least a revision (`at_least_rev`); for a destructive action, `fully_consistent` bypasses every cache.
+
+## Lookups agree with checks
+
+`LookupResources` and `LookupSubjects` confirm every candidate with the same rule `Check` uses, so a list never shows something a check
+would refuse.

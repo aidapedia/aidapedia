@@ -1,0 +1,119 @@
+---
+title: Connect an app
+description: "Sign people in to your application through Hayat with any OpenID Connect library, and verify their tokens."
+keywords: oidc openid connect oauth sign in client pkce public confidential redirect uri scopes access token refresh token logout discovery jwks
+---
+
+Hayat is a standard OpenID Connect provider, so any certified OIDC library signs people in through it. Your app sends people to Hayat,
+they sign in there (or are already signed in, which is the single sign-on), and Hayat sends them back with a code your app trades for
+tokens.
+
+## Add a sign-in client
+
+Every OAuth client belongs to a [service](/docs/services), and the service's owners manage its clients. In the console, open the
+service → **Clients** → **Add sign-in client**:
+
+| Kind | For | Authenticates with |
+| --- | --- | --- |
+| Confidential | A server that can keep a secret | A client secret, shown once |
+| Public | A browser, mobile or command-line app | PKCE (S256), which is required for public clients |
+
+Give it the redirect URIs your app uses, such as `https://app.example.com/callback`. They must be https, except on `localhost`
+(or anywhere while `HAYAT_DEV=true`). Post-logout redirect URIs follow the same rule.
+
+## Point your library at the issuer
+
+Everything your library needs is in the discovery document:
+
+```bash
+curl https://auth.example.com/.well-known/openid-configuration
+```
+
+Configure it with the issuer (`HAYAT_ISSUER`) and the client id, and let it discover the endpoints and keys from there.
+
+<CodeTabs>
+  <Tab label="Browser (oidc-client-ts)">
+    ```ts title="auth.ts"
+    import { UserManager } from 'oidc-client-ts'
+
+    export const auth = new UserManager({
+      authority: 'https://auth.example.com',
+      client_id: 'YOUR_PUBLIC_CLIENT_ID',
+      redirect_uri: `${location.origin}/callback`,
+      scope: 'openid profile email offline_access',
+    })
+
+    await auth.signinRedirect()                 // send them to Hayat
+    const user = await auth.signinCallback()    // on /callback
+    ```
+  </Tab>
+  <Tab label="Go (coreos/go-oidc)">
+    ```go title="main.go"
+    provider, _ := oidc.NewProvider(ctx, "https://auth.example.com")
+    conf := oauth2.Config{
+        ClientID:     os.Getenv("CLIENT_ID"),
+        ClientSecret: os.Getenv("CLIENT_SECRET"),
+        Endpoint:     provider.Endpoint(),
+        RedirectURL:  "https://app.example.com/callback",
+        Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+    }
+    ```
+  </Tab>
+</CodeTabs>
+
+## Scopes
+
+| Scope | Gives |
+| --- | --- |
+| `openid` | An ID token, with `sub`: the person's id |
+| `profile` | `name`, `picture`, `zoneinfo`, `locale`, `updated_at` |
+| `email` | `email` and `email_verified` |
+| `phone` | `phone_number` |
+| `offline_access` | A refresh token |
+
+## Tokens
+
+**Access tokens** are ES256 JWTs. They carry `sub` (the person) and `sid` (their Hayat session), and **never carry permissions**: what
+someone may do is asked of Hayat at the moment it matters, so a revoked grant takes effect at once. Their `aud` names the client and the
+client's service, so a service checking its own namespace accepts any of its sign-in clients. They last 10 minutes by default.
+
+**Refresh tokens** rotate on every use. Using one that was already used revokes its whole family, which is how a stolen token is caught,
+and a refresh token dies with its session. Never let two parts of your app refresh at the same moment: refresh in one place and share the
+result.
+
+## Verify tokens in your API
+
+Verify an access token offline against Hayat's published keys: the signature, the issuer, the expiry, and that it was issued for you.
+The SDKs do all of it, and refuse a service's own client-credentials token where a person's is expected:
+
+<CodeTabs>
+  <Tab label="Node">
+    ```ts title="server.ts"
+    import { Hayat } from '@aidapedia/hayat'
+
+    const hayat = await Hayat.create({ apiUrl, issuer, clientId, clientSecret })
+    app.use(hayat.middleware('billing'))        // sets req.hayatUser, or answers 401
+    ```
+  </Tab>
+  <Tab label="Go">
+    ```go title="main.go"
+    mux.Handle("/api/", hz.Middleware("billing")(api))   // 401 without a valid token
+
+    claims, _ := hayat.ClaimsFrom(r.Context())           // in a handler
+    ```
+  </Tab>
+</CodeTabs>
+
+Pass your service's namespace (`billing`) to accept any of its sign-in clients, one client's id to accept only that client, or nothing
+to accept any. Then ask [Check](/docs/services#ask-for-decisions) before acting.
+
+## Sign out
+
+Send people to the provider's end-session endpoint (in the discovery document) with their ID token and a registered post-logout
+redirect URI. It ends their Hayat session, which signs them out of every app that relies on it once their access tokens expire.
+
+## Let each person's theme follow them
+
+Each account has one theme (accent, density, corners, font, sidebar and content width), chosen in Hayat's console. Read it with
+`DirectoryService.GetUserAppearance` on each page load and apply it; don't keep a copy, so a change shows the next time they load a page.
+Every field is optional, and an empty one means your app's own default.

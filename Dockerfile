@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/aidapedia/package.json apps/aidapedia/
 COPY apps/tabletsgo/package.json apps/tabletsgo/
+COPY apps/hayat/package.json apps/hayat/
 COPY packages/shared/package.json packages/shared/
 RUN npm ci
 

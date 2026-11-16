@@ -1,0 +1,101 @@
+---
+title: Concepts
+description: "Tenants, groups, resources, roles and grants: the pieces of Hayat's tree, and how they add up to an answer."
+keywords: tenant group resource tree role grant permission owner placement roster membership inherit node
+---
+
+Everything Hayat knows about access hangs off one tree. A service never stores who may do what: it files its resources in the tree and
+asks.
+
+```text title="An instance's tree"
+hayat/root                     the instance
+├─ hayat/service  billing      a service's namespace; its owners approve its contracts
+└─ hayat/tenant   Acme         an organisation every service shares
+   ├─ hayat/group Engineering  a folder and a roster at once
+   │  ├─ hayat/group Payment
+   │  │  └─ billing/ledger  Ledger 2026     a resource billing mirrored here
+   │  └─ hayat/group Promo
+   └─ hayat/group Marketing
+```
+
+## Tenants
+
+A **tenant** is an organisation: a company, a customer, a team that works apart from the others. Every service shares the same
+tenants, so Acme in one app is Acme in all of them.
+
+A tenant has one **owner**, who is always a member and can't be removed, and a **roster** of members. Being on the roster is what lets
+someone see a tenant's resources at all: for any type that requires membership, a person who isn't on the roster is refused whatever
+was granted to them. A tenant can only be deleted when nothing is filed under it.
+
+The owner runs their tenant from the same console as the instance admin (its members, its name, its part of the tree) without being
+an instance admin.
+
+## Groups
+
+A **group** is two things at once: a folder resources are filed under, and a list of people a grant can name. Groups hold groups, so
+they nest like an org chart.
+
+**Belonging goes up, access goes down.** Whoever is on Payment's roster counts as being in Engineering too, because Payment sits under
+it, so a grant *to* Engineering reaches them. But a grant *on* Payment reaches nothing above it, and a team never opens what a sibling
+team filed.
+
+Rosters themselves stay flat: a group lists only the people put on it directly. The console shows the rest as "via Payment". A team
+lead isn't a column on the roster; it's a role granted on the team's node.
+
+## Resources
+
+A **resource** is one of your service's things (a ledger, a database connection, a report) mirrored into the tree as a node. Your
+service creates the node when it creates the thing, under a tenant or a group, with an optional owner. Its type comes from your
+service's [contract](/docs/contracts), written short in the manifest and qualified in the tree: `ledger` becomes `billing/ledger`.
+
+Hayat only knows a resource's type, id, name, parent and owner. Its contents stay in your service.
+
+## Roles and permissions
+
+A **permission** is a key a service enforces, like `billing.ledger.view`. It exists because a route checks it, and it has a **scope**:
+the node type it means something on.
+
+A **role** is a named set of permissions. Services suggest roles in their contracts, Hayat has three of its own, and an admin can make
+more in the console, starting from a copy of an existing one.
+
+| Built-in role | Granted on | Lets someone |
+| --- | --- | --- |
+| Tenant admin (`hayat.tenant-admin`) | the root or a tenant | Run a tenant: its settings, members, groups, and who may do what in it |
+| Group manager (`hayat.group-manager`) | a group | Run one group: its members, what is filed in it, and grants inside it |
+| Service owner (`hayat.service-owner`) | a service | Approve contracts that touch its namespace, name its other owners, rotate its API secret |
+
+## Grants
+
+A **grant** gives one role to a person or a group on one node. It counts on that node and, unless it says otherwise, everything below
+it. A grant can expire.
+
+A grant is only valid where it can mean something: the role must apply to the node's type, every permission's scope must sit at or
+below the node, a person must be on the tenant's roster, and a group must belong to the same tenant (or be the tenant itself, meaning
+everyone in it). When someone leaves a tenant, their grants and group memberships in it go with them.
+
+## Decisions
+
+When a service asks whether a person holds a permission on a node, Hayat walks the chain from the root down to that node:
+
+<Steps>
+  <Step title="Owner">Owning any node on the chain allows every permission there and below.</Step>
+  <Step title="Grants">A grant on the chain counts when it names the person, or a group (or the tenant) they count in, and reaches the node.</Step>
+  <Step title="Placement">
+    If the resource's type opens by placement, whoever counts in the nearest group above it may use its access permission, and so may
+    anyone directly on the roster of a group further up. The tenant never counts here.
+  </Step>
+  <Step title="Membership">If the type requires membership, someone who isn't on the tenant's roster gets nothing, whatever the steps above said.</Step>
+</Steps>
+
+There are no deny rules: access is the union of everything that allows it. That keeps answers cacheable and explainable, and each answer
+can name the first thing on the chain that gave it (`owner`, `grant`, `placement` or `admin`). Instance admins hold Hayat's own
+`hayat.*` permissions everywhere, but never a service's: administering the instance is not reading its data.
+
+The full rule, with examples, is in [How decisions are made](/docs/access-model).
+
+## Services and contracts
+
+A **service** is an application that files resources in the tree and asks for decisions. An instance admin registers it, which gives
+it a namespace (`billing`), API credentials and a first owner. Its **contract** declares its resource types, permissions and suggested
+roles. Contracts only ever add, and a new version goes live as soon as it is published, unless it files its types under another
+service's types: then that service's owners approve it first. See [Plug a service in](/docs/services).

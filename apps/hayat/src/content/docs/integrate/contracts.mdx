@@ -1,0 +1,118 @@
+---
+title: Contract reference
+description: "Every field of a service's contract, the names it accepts, and the rules a new version must follow."
+keywords: contract manifest yaml resource_types permissions default_roles parents access via_placement requires_membership scope applies_to version approve pending
+---
+
+A contract is a YAML (or JSON) manifest. It is how a service joins the catalog: the resource types it files in the tree, the permissions
+that mean something on them, and the roles it suggests. Unknown fields are refused, so a typo fails the publish instead of being ignored.
+
+```yaml title="contract.yaml"
+service: billing
+version: 2
+description: Ledgers and invoices
+resource_types:
+  - name: ledger
+    description: A set of accounts
+    parents: [hayat/tenant, hayat/group]
+    access: { permission: ledger.view, via_placement: true, requires_membership: true }
+  - name: invoice
+    parents: [ledger]
+permissions:
+  - { key: ledger.view, scope: ledger, label: View ledgers, description: See entries and balances }
+  - { key: ledger.post, scope: ledger, label: Post entries }
+  - { key: invoice.send, scope: invoice, label: Send invoices }
+default_roles:
+  - slug: accountant
+    name: Accountant
+    description: Keeps the books
+    permissions: [ledger.view, ledger.post, invoice.send]
+    applies_to: [ledger]
+```
+
+## Top level
+
+<Params>
+  <Param name="service">
+    The service's namespace, as it was registered: a lowercase letter, then 2 to 31 lowercase letters, digits or `-`. `hayat` is Hayat's
+    own and can't be used.
+  </Param>
+  <Param name="version">
+    A whole number greater than every version published before, including rejected ones.
+  </Param>
+  <Param name="description">Optional. What the service is, for the console.</Param>
+</Params>
+
+## resource_types
+
+<Params>
+  <Param name="name">
+    The type's short name: a lowercase letter, then up to 47 lowercase letters, digits, `-` or `_`. Stored qualified, so `ledger` is
+    `billing/ledger`.
+  </Param>
+  <Param name="parents">
+    The node types a resource of this type may be filed under: at least one. Use `hayat/tenant` and `hayat/group` to file it in a
+    tenant's tree, your own types (by short name) to nest them, or another service's types. A type can't sit directly under
+    `hayat/root` or `hayat/service`.
+  </Param>
+  <Param name="access">
+    Optional. How a resource of this type opens without a grant:
+
+    - `permission`: the permission this applies to. It must be declared in the same contract.
+    - `via_placement`: when true, whoever counts in the nearest group above the resource holds `permission` on it, and so does anyone
+      directly on the roster of a group further up. The tenant itself never counts.
+    - `requires_membership`: when true, someone who isn't on the tenant's roster gets nothing on it, whatever was granted.
+  </Param>
+  <Param name="description">Optional. What it is, for the console.</Param>
+</Params>
+
+## permissions
+
+<Params>
+  <Param name="key">
+    Lowercase words joined by dots, such as `ledger.view`. Stored qualified (`billing.ledger.view`), and must stay inside the service's
+    namespace.
+  </Param>
+  <Param name="scope">
+    The node type the permission means something on, by short name or qualified. A role holding it can only be granted at that type or
+    above it.
+  </Param>
+  <Param name="label">
+    Optional. The short name admins read on the Roles pages ("View ledgers"). Without one they see the key.
+  </Param>
+  <Param name="description">Optional. One line on what it lets someone do.</Param>
+</Params>
+
+## default_roles
+
+Roles the service suggests. Admins see them in the console beside Hayat's own and the ones they made.
+
+<Params>
+  <Param name="slug">
+    A lowercase letter, then up to 47 lowercase letters, digits, `-` or `_`. Stored as `billing.accountant`.
+  </Param>
+  <Param name="permissions">The permissions it holds: at least one, each declared in this contract.</Param>
+  <Param name="applies_to">Optional. The node types it can be granted on. Without it, wherever its permissions' scopes allow.</Param>
+  <Param name="name">Optional. Its display name; the slug without one.</Param>
+  <Param name="description">Optional. What someone holding it does.</Param>
+</Params>
+
+## Rules for a new version
+
+- **Additive only.** A new version may add types, parents, permissions, roles and permissions to roles. It may never remove or change
+  them. Labels and descriptions are display text, so they may change.
+- **Live when published,** with one exception: a version that files one of your types under another service's types is **pending**
+  until an owner of each such namespace approves it on their service's page. Your own namespace never needs an approval, since only
+  its owners, or the service itself, can publish for it.
+- **One pending version at a time.** While one waits, a new publish is refused until it is approved or rejected.
+- **Names are checked against the catalog.** A parent, scope or `applies_to` type must exist: in this contract, in Hayat's own types, or
+  in another service's active contract.
+
+## Statuses
+
+| Status | Means |
+| --- | --- |
+| `active` | The version in force. |
+| `pending` | Waiting for another service's owners to approve it. |
+| `superseded` | Was active; a later version replaced it. |
+| `rejected` | An owner it was waiting on said no. |

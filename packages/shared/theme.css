@@ -57,6 +57,13 @@
     --color-on-accent: #143618;
   }
 
+  /* Anything that is Hayat wears its console's jade (the console's own primary in dark mode). */
+  .theme-hayat {
+    --color-accent: #3fae86;
+    --color-accent-bright: #5fc49f;
+    --color-on-accent: #062519;
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
@@ -144,6 +151,38 @@
 @utility grid-cell {
   opacity: 0;
   animation: grid-cell 7s ease-in-out infinite;
+}
+
+/* The how-it-works walkthrough (components/flow/Walkthrough.tsx). Without motion none of this applies: the stage simply shows each step, and steps change on click. */
+@media (prefers-reduced-motion: no-preference) {
+  .flow-progress {
+    animation: flow-progress var(--flow-step) linear both;
+  }
+
+  .flow-rise {
+    animation: flow-rise 420ms ease-out var(--flow-delay, 0ms) both;
+    animation-play-state: var(--flow-enter, running);
+  }
+
+  .flow-dots {
+    animation: flow-dots 1.1s linear infinite;
+    animation-play-state: var(--flow-run, running);
+  }
+}
+
+@keyframes flow-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes flow-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* One dash and gap of .flow-dots, so the loop is seamless. */
+@keyframes flow-dots {
+  to { stroke-dashoffset: -24; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import SiteShell from '@/components/SiteShell'
-import { useGitHubStats } from '@/hooks/useGitHubStats'
 import ChangelogPage from '@/pages/ChangelogPage'
 import ComparePage from '@/pages/ComparePage'
 import DatabasesPage from '@/pages/DatabasesPage'
@@ -8,12 +7,14 @@ import DocsPage from '@/pages/DocsPage'
 import HomePage from '@/pages/HomePage'
 import SponsorPage from '@/pages/SponsorPage'
 import ScrollManager from '@shared/components/ScrollManager'
+import { REPO } from '@shared/content/tabletsgo'
+import { useGitHubStats } from '@shared/hooks/useGitHubStats'
 
 // Without the trailing slash, or the router matches nothing at /tabletsgo and the page stays blank.
 const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 export default function App() {
-  const stats = useGitHubStats()
+  const stats = useGitHubStats(REPO)
 
   return (
     <BrowserRouter basename={BASENAME}>

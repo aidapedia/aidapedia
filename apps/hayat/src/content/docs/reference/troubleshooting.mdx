@@ -1,0 +1,60 @@
+---
+title: Troubleshooting
+description: "What each start-up error means, and the usual reasons sign-in or a decision goes wrong."
+keywords: error troubleshoot HAYAT_MASTER_KEY required base64 32 bytes issuer https redirect uri invalid token denied setup link migrate changed
+---
+
+Hayat checks its settings when it starts and stops with a message naming what is wrong, so a bad deployment fails at boot instead of
+misbehaving later. Read the first error in the logs: `docker compose logs hayat-auth`.
+
+## At start-up
+
+| Message | Fix |
+| --- | --- |
+| `HAYAT_DATABASE_URL is required` | Set it. The compose file sets it for you, so this means a role started outside it. |
+| `HAYAT_MASTER_KEY is required` | Set it to `openssl rand -base64 32`. |
+| `HAYAT_MASTER_KEY is not base64` | It was pasted with a line break or quotes. Paste the single line `openssl` printed. |
+| `HAYAT_MASTER_KEY must decode to 32 bytes` | It was generated with another length. Use `openssl rand -base64 32`. |
+| `HAYAT_ISSUER must be https:// unless HAYAT_DEV=true` | Put `auth` behind TLS and set the https address, or set `HAYAT_DEV=true` on a machine only you use. |
+| `HAYAT_ISSUER is not a URL` | Include the scheme: `https://auth.example.com`. |
+| `HAYAT_DATABASE_ENGINE must be postgres or yugabyte` | Fix the spelling, or unset it for PostgreSQL. |
+| `migrate: … changed after it was applied` | A shipped migration file was edited. Use the release's image as published. |
+
+## No setup link in the logs
+
+The link is logged only by the `auth` role, and only while the instance has no admin: `docker compose logs hayat-auth | grep setup`. If
+it has expired (after 24 hours), print a new one with `hayat setup-link`. If it says setup is closed, an admin already exists: sign in,
+or reset that admin's password from the sign-in page.
+
+## No emails arrive
+
+Without `HAYAT_SMTP_URL`, emails are written to the log instead of sent. With the compose file they go to Mailpit at `:8025`. Otherwise
+check the `worker` is running: it is the role that sends mail, retrying with growing gaps when the relay fails. See [Email](/docs/email).
+
+## Sign-in fails with a redirect error
+
+The redirect URI your app sent must be registered on its client, exactly. Outside development it must be https, except on `localhost`.
+Check the client under its service in the console.
+
+## A token is refused
+
+- **Wrong audience.** Verify with your service's namespace (accepts any of its sign-in clients) or the exact client id.
+- **Wrong issuer.** The issuer in the token is `HAYAT_ISSUER`. A proxy that changes the host, or an issuer that changed after tokens
+  were issued, makes every existing token fail.
+- **A service token.** A client-credentials token is refused where a person's token is expected.
+- **Expired.** Access tokens last 10 minutes by default; refresh them.
+
+## Signed out unexpectedly
+
+A refresh token used twice revokes its whole family, so two tabs or workers refreshing at the same moment sign the person out. Refresh in
+one place and share the result.
+
+## A check says no when it should say yes
+
+- **The resource was never mirrored.** An unknown resource is a "no". Make sure your service writes the node when it creates the thing.
+- **The person isn't on the tenant's roster.** For a type that requires membership, nothing else counts.
+- **A sibling team.** Placement only opens a resource to its own group's branch, never to a team beside it.
+- **The grant doesn't reach.** A grant that doesn't inherit counts only on its own node, and a grant on a group reaches nothing above it.
+- **It just changed.** Make sure your service runs `watch`, or its cache keeps old answers for up to 10 seconds.
+
+Ask `Check` with `explain: true`, or open the node in the console's Resource Tree to see everyone who reaches it and how.

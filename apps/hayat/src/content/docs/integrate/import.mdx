@@ -1,0 +1,95 @@
+---
+title: Import accounts
+description: "Move a service's own people, tenants, groups and grants into Hayat, keeping their ids."
+keywords: import bundle migrate users hayat import idMap app-url tabletsgo password hash sha256 argon2id
+---
+
+A service that kept its own users, tenants and grants hands them to Hayat with a **bundle**: a JSON file already in Hayat's terms. The
+exporting system maps its roles onto role slugs and its folders onto groups, so importing is only writing.
+
+```bash
+hayat import --file bundle.json --app-url https://app.example.com --out result.json
+```
+
+[Tabletsgo](https://github.com/aidapedia/tabletsgo) writes one with `npm run hayat:bundle`, and on its first start after switching to
+Hayat.
+
+## What it does
+
+<Steps>
+  <Step title="Registers the service">If it isn't registered yet, and prints its API credentials once.</Step>
+  <Step title="Publishes its contract">The bundle's contract, applied and approved, so its resources and grants have types to land on.</Step>
+  <Step title="Registers a sign-in client">With `--app-url`, a public client of the service with `<app-url>/callback` as its redirect.</Step>
+  <Step title="Writes everything else">People, tenants, groups, rosters, resources, roles and grants.</Step>
+</Steps>
+
+Then it prints what to configure the service with:
+
+```text title="Output"
+Imported from tabletsgo: 12 people (0 already here), 3 tenants (0 skipped), 5 groups, 40 resources, 18 grants.
+Service "tabletsgo" runs contract version 1.
+
+Configure tabletsgo with:
+  HAYAT_ISSUER=https://auth.example.com
+  HAYAT_CLIENT_ID=…
+  HAYAT_CLIENT_SECRET=…   (shown once)
+  HAYAT_WEB_CLIENT_ID=…
+  HAYAT_API_URL=<the api role's address, e.g. http://hayat-api:7443>
+```
+
+## Flags
+
+<Params>
+  <Param name="--file">Required. The bundle.</Param>
+  <Param name="--app-url">The application's public URL. Registers its sign-in client with `<app-url>/callback`.</Param>
+  <Param name="--out">Also write the result (the id map and the credentials) to this file, readable only by you.</Param>
+</Params>
+
+## What is kept
+
+- **Ids of people and tenants**, because the other system's rows point at them. Groups and grants get new ids.
+- **Passwords.** An argon2id hash moves as it is. A hash in the old system's unsalted SHA-256 form (`$sha256$<hex>`) verifies once and is
+  replaced with argon2id at that person's next sign-in. Any other format is refused.
+- **Themes**, for accounts the import creates. An account Hayat already had keeps its own.
+
+## People Hayat already knows
+
+An email address Hayat already has is matched, not duplicated. Their id in Hayat stays, so the result's `idMap` lists every id that
+changed: give the result file (`--out`) to the service so it rewrites its references. Tabletsgo does it with
+`npm run hayat:remap -- result.json`.
+
+## Admins
+
+The bundle's admins become Hayat instance admins only if Hayat has none yet, which is the case for a Hayat deployed for this service.
+Either way, the bundle's root grants carry what they may do in the service itself.
+
+## Running it again
+
+Changes nothing: matched people stay matched, and a tenant that already exists is skipped.
+
+## The bundle
+
+```json title="bundle.json (outline)"
+{
+  "format": "hayat-import",
+  "version": 1,
+  "source": "tabletsgo",
+  "service": { "id": "tabletsgo", "displayName": "Tabletsgo", "description": "…", "contract": "service: tabletsgo\n…" },
+  "users": [{ "id": "…", "email": "maya@acme.com", "name": "Maya", "passwordHash": "$sha256$…", "status": "active", "admin": true }],
+  "roles": [{ "key": "custom:analyst", "name": "Analyst", "permissions": ["tabletsgo.connection.open"], "appliesTo": [] }],
+  "rootGrants": [{ "userId": "…", "role": "tabletsgo.admin" }],
+  "tenants": [{
+    "id": "…", "name": "Acme", "ownerId": "…", "members": ["…"],
+    "groups": [{ "key": "eng", "parent": "", "name": "Engineering", "members": ["…"] }],
+    "resources": [{ "type": "tabletsgo/connection", "externalId": "42", "name": "orders", "parent": "eng", "ownerId": "…" }],
+    "grants": [{ "on": "group:eng", "principal": "group:eng", "role": "tabletsgo.connection-user", "inherit": true }]
+  }]
+}
+```
+
+| Field | Takes |
+| --- | --- |
+| a grant's `on` | `tenant`, `group:<key>` or `resource:<type>:<externalId>` |
+| a grant's `principal` | `user:<id>`, `group:<key>`, or `tenant` for everyone in it |
+| a grant's `role` | A role slug (`hayat.tenant-admin`, `tabletsgo.owner`) or a bundle role's `key` |
+| a group's or resource's `parent` | `""` for the tenant, or a group's `key`. List parent groups before their children. |

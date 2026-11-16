@@ -1,0 +1,58 @@
+---
+title: Upgrading
+description: "Pull a new image, migrate once, restart the roles."
+keywords: upgrade update migrate status version release pull rollback HAYAT_VERSION
+---
+
+A new release is a new image. Upgrading is three steps: pull it, apply its migrations once, and restart the roles on it.
+
+<Steps>
+  <Step title="Read the release notes">
+    Every release is on the [changelog](/changelog) and the GitHub releases page. Note anything that asks for a new setting.
+  </Step>
+  <Step title="Back up the database">
+    Each migration is applied in its own transaction, so one that fails is rolled back. A backup is what lets you go back to the
+    previous image after they succeed.
+  </Step>
+  <Step title="Pull and migrate">
+    With the compose file, `up` runs `hayat-migrate` before the roles start:
+
+    ```bash
+    docker compose pull
+    docker compose up -d
+    ```
+
+    Anywhere else, run `hayat migrate` once with the new image before starting its roles, and never alongside another version's
+    `migrate`.
+  </Step>
+  <Step title="Check it">
+    ```bash
+    docker compose run --rm hayat-migrate migrate --status
+    docker compose exec hayat-auth hayat version
+    ```
+  </Step>
+</Steps>
+
+## How migrations work
+
+Migrations are append-only, with one history per database engine (`migrations/postgres`, `migrations/yugabyte`). The runner records
+each file it applies and refuses to run if a file it already applied has changed, so a hand-edited migration stops the start instead of
+drifting the schema.
+
+`hayat migrate --status` lists every migration and whether it is applied. `HAYAT_DATABASE_ENGINE` picks which history is used, so set it
+to the same value on `migrate` as on the roles.
+
+## Staying on one version
+
+The `latest` tag moves with every release. Pin `HAYAT_VERSION` in `.env` (or the image tag in your manifests) to a version such as
+`0.3.0`, or to a minor line such as `0.3` to take its patch releases.
+
+## Going back
+
+An older image isn't promised to run against a schema a newer one migrated. To go back, restore the backup you took before migrating
+and start the previous image on it.
+
+## What changes for your services
+
+Nothing you published moves: contracts, mirrored resources, clients and grants are data, and an upgrade keeps them. Update the
+[SDK](/docs/sdks) when you want what a release adds.

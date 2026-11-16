@@ -1,0 +1,72 @@
+---
+title: Roles and images
+description: "The four roles one binary runs, what each serves, who should reach it, and how they scale."
+keywords: auth admin api worker serve role port 8443 8080 7443 9090 healthz readyz image console nginx lease
+---
+
+Hayat is one static binary, published as the `ghcr.io/aidapedia/hayat` image. `hayat serve --role=<role>` picks what a process does;
+`serve` without `--role` runs all four in one process, which is the simplest way to run a small instance.
+
+```bash
+hayat serve                       # auth, admin, api and worker together
+hayat serve --role=auth           # one role
+hayat serve --role=auth,admin     # several, comma-separated
+```
+
+## The roles
+
+| Role | Port | Reached by | Does |
+| --- | --- | --- | --- |
+| `auth` | 8443 | People's browsers, and your apps | The OpenID provider (discovery, keys, tokens, userinfo, logout) and the hosted sign-in, sign-up, reset and setup pages. Its public address is the issuer. |
+| `admin` | 8080 | The console only | The admin API (Connect over HTTP/JSON) the console calls. Keep it on an internal network. |
+| `api` | 7443 | Your services only | The service API over gRPC (h2c), gRPC-Web and Connect on one port: decisions, resource writes, people, Watch, contract publishing. |
+| `worker` | none | Nobody | Sends queued email, deletes rows nothing can use any more, and rotates signing keys when they are due. |
+
+Every role also serves `/healthz` (the process is up) and `/readyz` (it can reach the database) on port `9090`.
+
+### auth
+
+The only role that must be public. It renders the sign-in pages and runs the provider, keeps sessions in a cookie on the issuer's
+origin, and rate-limits sign-in, sign-up and password reset. With more than one `auth` pod, set `HAYAT_REDIS_URL` so they share the
+counters; without it, each pod counts on its own. On its first start an instance with no admin logs a [setup link](/docs/quick-start).
+
+### admin
+
+Serves the console. The console image's nginx proxies `/hayat.admin.v1.*` and `/config.json` to it, so the console and its API share
+one origin. Nothing else needs it.
+
+### api
+
+What your services call with their client-credentials token. A service may ask about any person, but writes only nodes of its own
+namespace. Each `api` pod keeps a decision cache in memory, keyed by revisions, so a policy change makes old entries unreachable.
+
+### worker
+
+Runs jobs that must happen once per region, not once per pod. Workers compete for a lease row and only the holder works; if it dies,
+the lease expires within 30 seconds and a standby takes over. Run two for availability; only one is ever active.
+
+## The console image
+
+`ghcr.io/aidapedia/hayat-console` is the React console behind nginx. It needs one setting, the `admin` role's address:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `HAYAT_ADMIN_URL` | `http://hayat-admin:8080` | Where nginx proxies the admin API |
+
+The console signs in through the `auth` role like any other app. Hayat registers its client on start with
+`<HAYAT_CONSOLE_URL>/callback` as the redirect, so set `HAYAT_CONSOLE_URL` to where people open the console.
+
+## Scaling
+
+- `auth`, `admin` and `api` are stateless: run as many as you need behind a load balancer.
+- `worker`: two at most is plenty, since only one works at a time.
+- `migrate` runs once before each release, never alongside an older version's `migrate`.
+
+## Building the images yourself
+
+```bash
+docker build -t hayat .                        # the binary, from the repo root
+docker build -t hayat-console console/         # the console
+```
+
+The binary's version comes from the `VERSION` build argument (`hayat version` prints it); release builds take it from the tag.

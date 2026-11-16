@@ -8,13 +8,15 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/aidapedia/package.json apps/aidapedia/
 COPY apps/tabletsgo/package.json apps/tabletsgo/
+COPY apps/hayat/package.json apps/hayat/
 COPY packages/shared/package.json packages/shared/
 RUN npm ci
 
-# Where people reach this site and Tabletsgo's, baked into the build (see packages/shared/vite.js).
+# Where people reach this site, Tabletsgo's and Hayat's, baked into the build (see packages/shared/vite.js).
 ARG AIDAPEDIA_URL=/
 ARG TABLETSGO_URL
-ENV AIDAPEDIA_URL=${AIDAPEDIA_URL} TABLETSGO_URL=${TABLETSGO_URL}
+ARG HAYAT_URL
+ENV AIDAPEDIA_URL=${AIDAPEDIA_URL} TABLETSGO_URL=${TABLETSGO_URL} HAYAT_URL=${HAYAT_URL}
 
 COPY . .
 RUN npm run build -w apps/aidapedia

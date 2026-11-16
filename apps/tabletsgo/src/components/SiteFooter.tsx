@@ -28,7 +28,7 @@ export default function SiteFooter() {
       <div className="mx-auto grid max-w-[1152px] gap-10 px-4 py-12 sm:grid-cols-3 md:px-6 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] xl:px-0">
         <div className="sm:col-span-3 lg:col-span-1">
           <Brand />
-          <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-ink-dim">A self-hosted web console for PostgreSQL, SQLite, Redis and Kafka.</p>
+          <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-ink-dim">A self-hosted web console for PostgreSQL, MySQL, SQLite, Redis and Kafka.</p>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="mt-3 inline-flex min-h-9 items-center gap-2 text-sm text-ink-dim transition-colors hover:text-ink">
             <MailIcon aria-hidden="true" />
             {SUPPORT_EMAIL}

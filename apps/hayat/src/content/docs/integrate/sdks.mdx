@@ -1,0 +1,101 @@
+---
+title: SDKs
+description: "The Go and Node clients for the service API: credentials, a decision cache, Watch, read-your-writes and token checks."
+keywords: sdk go node typescript client check lookup upsert delete watch verify middleware cache ttl @aidapedia/hayat
+---
+
+Both SDKs own what every service would otherwise write by hand: the client-credentials token, a short decision cache emptied per tenant by
+the Watch stream, read-your-writes after a resource write, and offline verification of people's access tokens. They also expose the
+generated clients for every RPC, for what the helpers don't cover.
+
+| | Go | Node |
+| --- | --- | --- |
+| Package | `github.com/aidapedia/hayat/sdk/go/hayat` | `@aidapedia/hayat` (in `sdk/node`) |
+| Protocol | Connect over HTTP/1.1 or HTTP/2 | Connect over HTTP/1.1 |
+| Tokens | `golang.org/x/oauth2` | built in, refreshed 30 s before expiry |
+
+## Create a client
+
+<CodeTabs>
+  <Tab label="Go">
+    ```go title="main.go"
+    hz, err := hayat.New(ctx, hayat.Config{
+        APIURL:       "http://hayat-api:7443",
+        Issuer:       "https://auth.example.com",
+        ClientID:     os.Getenv("HAYAT_CLIENT_ID"),
+        ClientSecret: os.Getenv("HAYAT_CLIENT_SECRET"),
+    })
+    go hz.Watch(ctx)
+    ```
+  </Tab>
+  <Tab label="Node">
+    ```ts title="hayat.ts"
+    import { Hayat } from '@aidapedia/hayat'
+
+    export const hayat = await Hayat.create({
+      apiUrl: 'http://hayat-api:7443',
+      issuer: 'https://auth.example.com',
+      clientId: process.env.HAYAT_CLIENT_ID!,
+      clientSecret: process.env.HAYAT_CLIENT_SECRET!,
+    })
+    void hayat.watch()
+    ```
+  </Tab>
+</CodeTabs>
+
+Creating a client fetches the issuer's discovery document (for the token endpoint and the keys) and makes no API call.
+
+| Setting | Go | Node | Default |
+| --- | --- | --- | --- |
+| The `api` role | `APIURL` | `apiUrl` | required |
+| The issuer | `Issuer` | `issuer` | required |
+| Service credentials | `ClientID`, `ClientSecret` | `clientId`, `clientSecret` | required |
+| How long an answer is reused | `CacheTTL` | `cacheTtlMs` | 10 seconds; Go: negative turns it off, Node: `0` |
+| HTTP client | `HTTPClient` | | `http.DefaultClient` |
+
+## Methods
+
+| Go | Node | Does |
+| --- | --- | --- |
+| `Check(ctx, user, perm, res)` | `check(user, perm, res)` | Whether a person holds a permission on a node. Cached; an unknown resource is `false`. |
+| `Lookup(ctx, user, perm, type, tenant)` | `lookup(user, perm, type, tenant?)` | Ids of every resource of a type the person holds the permission on, across all pages. |
+| `UpsertResource(ctx, res, name, parent, owner)` | `upsertResource(res, name, parent, owner?)` | Create or update the node mirroring a resource. |
+| `DeleteResource(ctx, res)` | `deleteResource(res)` | Remove it; refused while anything is filed under it. |
+| `Watch(ctx)` | `watch(signal?)` | Stream policy changes and drop cached answers, reconnecting with backoff. |
+| `VerifyAccessToken(ctx, raw, aud)` | `verifyAccessToken(token, aud?)` | Check a person's access token offline. |
+| `Middleware(aud)` | `middleware(aud?)` | Verify the bearer token on each request, or answer 401. |
+| `Authz`, `Tree`, `Directory`, `Schema` | `authz`, `tree`, `directory`, `schema` | The generated clients, for every other RPC. |
+
+## Naming a node
+
+A node is named by type and your id with `Ref` / `ref`, a tenant with `Ref("hayat/tenant", tenantID)`, or any node by its node id:
+
+```go
+hayat.Ref("billing/ledger", ledgerID)
+hayat.Ref("hayat/tenant", tenantID)
+hayat.Resource{NodeID: groupNodeID}
+```
+
+```ts
+ref('billing/ledger', ledgerId)
+ref('hayat/tenant', tenantId)
+({ nodeId: groupNodeId })
+```
+
+## The decision cache
+
+Each answer is kept for the cache's lifetime, keyed by person, permission and node. `Watch` drops every answer for a tenant as soon as
+Hayat reports a change there (and all of them for a global change, or after a disconnect, since what happened meanwhile is unknown). Run
+it once per process for the life of the process.
+
+For two seconds after `UpsertResource` or `DeleteResource`, `Check` asks Hayat for at least the revision the write produced, so a
+person sees what they just made.
+
+## Verifying people's tokens
+
+`VerifyAccessToken` checks the signature against the issuer's published keys, the issuer, the expiry, and the audience, and refuses a
+service's own client-credentials token. Pass your service's namespace to accept any of its sign-in clients, one client's id to accept
+only that one, or nothing to accept any. The Go middleware puts the claims in the request context (`hayat.ClaimsFrom(ctx)`); the Node
+one sets `req.hayatUser`.
+
+The claims say who someone is (`sub`) and which session (`sid`). They never say what someone may do: ask `Check`.

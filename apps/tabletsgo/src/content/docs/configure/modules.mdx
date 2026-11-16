@@ -9,11 +9,12 @@ is whoever holds Tabletsgo admin in Hayat.
 
 <H2 id="what-you-can-turn-off">What you can turn on and off</H2>
 
-| Module                           | Kind     | Settings                          |
-| -------------------------------- | -------- | --------------------------------- |
-| PostgreSQL, MySQL, SQLite, Redis | Database | Query timeout, table row limit    |
-| Kafka                            | Database | Messages, bytes and time per read |
-| Backup                           | Feature  |                                   |
+| Module                    | Kind     | Settings                          |
+| ------------------------- | -------- | --------------------------------- |
+| PostgreSQL, MySQL, SQLite | Database | Query timeout, table row limit    |
+| Redis                     | Database | Query timeout                     |
+| Kafka                     | Database | Messages, bytes and time per read |
+| Backup                    | Feature  |                                   |
 
 Set them under **Administration → Modules**. They are stored in the instance, not in environment variables, so a change needs no
 restart. Workspaces only see what is on.

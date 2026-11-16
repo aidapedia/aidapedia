@@ -7,7 +7,7 @@ import { ArrowRightIcon } from '@shared/components/icons'
 export default function Databases() {
   return (
     <section id="databases" aria-label="Databases" className="scroll-mt-28 pb-12">
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {SUPPORTED_ENGINES.map((engine) => (
           <li key={engine.id} className="flex items-center gap-3 rounded-card border border-edge bg-card p-4">
             <DbLogo id={engine.id} size={40} />

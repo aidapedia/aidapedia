@@ -9,8 +9,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w apps/tabletsgo & npm run dev -w apps/aidapedia",
-    "build": "npm run build -w apps/aidapedia && npm run build -w apps/tabletsgo",
+    "dev": "npm run dev -w apps/tabletsgo & npm run dev -w apps/hayat & npm run dev -w apps/aidapedia",
+    "build": "npm run build -w apps/aidapedia && npm run build -w apps/tabletsgo && npm run build -w apps/hayat",
     "preview": "npm run preview -w apps/aidapedia",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

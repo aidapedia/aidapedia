@@ -1,0 +1,112 @@
+---
+title: Configuration
+description: "Every environment variable Hayat reads, its default, and what it does."
+keywords: env environment variables HAYAT_MASTER_KEY HAYAT_ISSUER HAYAT_DATABASE_URL HAYAT_DEV HAYAT_REDIS_URL HAYAT_SMTP_URL ttl lifetime port
+---
+
+import { DEV, OPT, PROD, REQ } from '@/components/docs/badges'
+
+Hayat reads its settings from environment variables once, when it starts, and stops with a clear message if a required one is missing
+or malformed. The same variables apply to every role and command. With the compose file they go in `.env`; the database, Redis and mail
+addresses are set by the compose file itself.
+
+## Required
+
+<Params>
+  <Param name="HAYAT_DATABASE_URL" badges={[REQ]}>
+    The PostgreSQL (or YugabyteDB) connection string, such as `postgres://hayat:secret@db:5432/hayat?sslmode=require`. Every role and
+    `migrate` use it. See [Database](/docs/database).
+  </Param>
+  <Param name="HAYAT_MASTER_KEY" badges={[REQ]}>
+    32 random bytes, base64. Encrypts the signing keys at rest with AES-256-GCM, and seeds the key the provider encrypts its own opaque
+    values with. Generate one with `openssl rand -base64 32`.
+
+    Losing or changing it means re-issuing every signing key, which signs everyone out. Keep it in a secret manager, backed up apart from
+    the database.
+  </Param>
+  <Param name="HAYAT_ISSUER" badges={[PROD]} def="http://localhost:8443">
+    The public base URL of the `auth` role, such as `https://auth.example.com`. It is the OpenID issuer every token names and the origin
+    of the session cookie, which is `Secure` when this is https. Must be `https://` unless `HAYAT_DEV=true`. A trailing slash is
+    dropped.
+  </Param>
+</Params>
+
+## Addresses
+
+<Params>
+  <Param name="HAYAT_CONSOLE_URL" badges={[PROD]} def="http://localhost:3000">
+    Where people open the console. Hayat registers the console's sign-in client with `<HAYAT_CONSOLE_URL>/callback` as its redirect
+    URI, and the `auth` role's own front page redirects here.
+  </Param>
+  <Param name="HAYAT_REDIS_URL" badges={[OPT]}>
+    Redis for the sign-in, sign-up and password reset rate limits, such as `redis://redis:6379/0`. Without it the counters are kept in
+    each process's memory, which is fine for one `auth` pod and wrong for several.
+  </Param>
+  <Param name="HAYAT_DATABASE_ENGINE" badges={[OPT]} def="postgres">
+    `postgres` or `yugabyte`. Picks the migration history; the SQL Hayat runs is the same. Set it to the same value on `migrate` and on
+    the roles.
+  </Param>
+  <Param name="HAYAT_REGION" badges={[OPT]} def="default">
+    This deployment's home region, written on every regional row. This version runs one region; leave it unset.
+  </Param>
+</Params>
+
+## Listen addresses
+
+<Params>
+  <Param name="HAYAT_AUTH_ADDR" badges={[OPT]} def=":8443">Where the `auth` role listens.</Param>
+  <Param name="HAYAT_ADMIN_ADDR" badges={[OPT]} def=":8080">Where the `admin` role listens.</Param>
+  <Param name="HAYAT_API_ADDR" badges={[OPT]} def=":7443">Where the `api` role listens: gRPC (h2c), gRPC-Web and Connect on one port.</Param>
+  <Param name="HAYAT_HEALTH_ADDR" badges={[OPT]} def=":9090">Where every role serves `/healthz` and `/readyz`.</Param>
+</Params>
+
+## Mail
+
+<Params>
+  <Param name="HAYAT_SMTP_URL" badges={[PROD]}>
+    The relay outgoing mail goes through, as `smtp://user:pass@host:port`. Without it, Hayat writes each email to its log instead of
+    sending it. The compose file points it at Mailpit unless you set it. See [Email](/docs/email).
+  </Param>
+  <Param name="HAYAT_MAIL_FROM" badges={[OPT]} def="Hayat <no-reply@localhost>">
+    The sender on every email. Use an address your relay may send from.
+  </Param>
+</Params>
+
+## Lifetimes
+
+Each is a Go duration: `90m`, `12h`, `720h`. There is no day unit, so 14 days is `336h`.
+
+<Params>
+  <Param name="HAYAT_SESSION_TTL" badges={[OPT]} def="336h">
+    How long a sign-in at Hayat lasts (14 days). While it does, signing in to another app takes no password: that is the single
+    sign-on. Disabling an account or resetting its password ends its sessions at once.
+  </Param>
+  <Param name="HAYAT_ACCESS_TOKEN_TTL" badges={[OPT]} def="10m">
+    How long an access token is valid. Services verify them offline, so this is also the longest a token outlives a revoked session.
+  </Param>
+  <Param name="HAYAT_REFRESH_TOKEN_TTL" badges={[OPT]} def="720h">
+    How long a refresh token is valid (30 days). Refresh tokens rotate on every use, and one dies with its session.
+  </Param>
+  <Param name="HAYAT_KEY_ROTATION" badges={[OPT]} def="2160h">
+    How often the `worker` rotates the signing keys (90 days). `hayat rotate-keys` rotates them now; the previous key stays published
+    for 48 hours so tokens it signed still verify.
+  </Param>
+</Params>
+
+## Development
+
+<Params>
+  <Param name="HAYAT_DEV" badges={[DEV]} def="false">
+    Relaxes rules that only make sense in production: allows an http issuer, http redirect URIs on any host, and cookies without
+    `Secure`. `hayat seed` refuses to run without it. Never set it on a deployment other people reach.
+  </Param>
+</Params>
+
+## In the compose file only
+
+These are read by `deploy/compose/docker-compose.yml`, not by Hayat.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | `hayat` | The compose PostgreSQL's password, used to build `HAYAT_DATABASE_URL` |
+| `HAYAT_VERSION` | `latest` | The tag of both images |

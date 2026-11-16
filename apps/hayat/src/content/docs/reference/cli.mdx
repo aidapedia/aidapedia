@@ -1,0 +1,70 @@
+---
+title: Command line
+description: "Every hayat command: serve, migrate, setup-link, rotate-keys, import, seed and version."
+keywords: cli command serve migrate status setup-link rotate-keys seed import version role
+---
+
+The image's entrypoint is the `hayat` binary, so with Docker a command is the container's arguments
+(`docker compose run --rm hayat-migrate migrate --status`, `docker run ghcr.io/aidapedia/hayat version`). Every command but `version`
+reads the [configuration](/docs/configuration) and connects to the database.
+
+## serve
+
+```bash
+hayat serve [--role=auth,admin,api,worker]
+```
+
+Runs one or more [roles](/docs/roles), comma-separated. Without `--role`, all four in one process. Every role also serves `/healthz` and
+`/readyz` on `HAYAT_HEALTH_ADDR`. It stops cleanly on `SIGINT` or `SIGTERM`.
+
+## migrate
+
+```bash
+hayat migrate            # apply every migration not yet applied
+hayat migrate --status   # list them, applied or not
+```
+
+Applies the migration history for `HAYAT_DATABASE_ENGINE`. Run it once before each release starts. It refuses to run if a migration it
+already applied has changed. See [Upgrading](/docs/upgrading).
+
+## setup-link
+
+```bash
+hayat setup-link
+```
+
+Prints a fresh link to create the first instance admin, valid for 24 hours. Once an admin exists it says setup is closed instead.
+
+## rotate-keys
+
+```bash
+hayat rotate-keys
+```
+
+Rotates the signing keys now, instead of waiting for `HAYAT_KEY_ROTATION`. The previous key stays published for 48 hours, so tokens it
+signed still verify until they expire.
+
+## import
+
+```bash
+hayat import --file bundle.json [--app-url https://app.example.com] [--out result.json]
+```
+
+Loads another system's people, tenants, groups, resources and grants from a bundle. See [Import accounts](/docs/import).
+
+## seed
+
+```bash
+hayat seed
+```
+
+Fills an empty database with a demo org chart and sign-in accounts, and prints them. Refuses to run without `HAYAT_DEV=true`. Running it
+again only prints the accounts.
+
+## version
+
+```bash
+hayat version
+```
+
+Prints the version the binary was built as, from the release tag.

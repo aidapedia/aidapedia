@@ -39,7 +39,7 @@ export default function DatabasesPage() {
   return (
     <>
       <PageTitle eyebrow="Databases" title="One console, shaped to each database">
-        Connect PostgreSQL, SQLite, Redis and Kafka side by side. The console adapts to what each one is, so a key store gets a key tree and a stream gets topics instead of a table list.
+        Connect PostgreSQL, MySQL, SQLite, Redis and Kafka side by side. The console adapts to what each one is, so a key store gets a key tree and a stream gets topics instead of a table list.
       </PageTitle>
       <ul className="grid gap-3 md:grid-cols-2">
         {SUPPORTED_ENGINES.map((engine) => (
@@ -85,7 +85,7 @@ export default function DatabasesPage() {
           Waiting on one of these, or another engine?{' '}
           <a href={`${REPO_URL}/issues`} rel="noopener" className="text-accent underline underline-offset-4">Tell us on GitHub</a>.
         </SectionHeading>
-        <ul className="mx-auto mt-10 grid max-w-[860px] gap-3 sm:grid-cols-3">
+        <ul className="mx-auto mt-10 grid max-w-[580px] gap-3 sm:grid-cols-2">
           {PLANNED_ENGINES.map((engine) => (
             <li key={engine.id} className="flex items-center gap-3 rounded-card border border-edge bg-card p-4 text-sm font-medium">
               <DbLogo id={engine.id} size={40} />

@@ -1,0 +1,66 @@
+---
+title: Introduction
+slug: ""
+description: "Sign-in and tree-based access control, run once and shared by every service you build."
+---
+
+import { CodeIcon, DatabaseIcon, KeyIcon, SettingsIcon, ShieldIcon, TerminalIcon, TreeIcon } from '@shared/components/icons'
+import { BuildingIcon } from '@shared/docs/icons'
+
+Hayat is the identity and access service for every app you run. It signs people in as an OpenID Connect provider, keeps the
+tenants and nested groups they belong to, and answers one question for any service that asks: **may this person do this, here?**
+
+Without it, each of your apps keeps its own users table, its own roles and its own idea of a team. With it, a person has one account
+and one session across all of them, an admin draws the organisation once, and every service reads access the same way.
+
+<Cards>
+  <Card to="/docs/quick-start" icon={TerminalIcon} title="Quick start">Every role running on your machine with Docker Compose, and the first admin created.</Card>
+  <Card to="/docs/concepts" icon={TreeIcon} title="Concepts">Tenants, groups, resources, roles and grants, and how they add up to an answer.</Card>
+</Cards>
+
+## What it does
+
+- **Signs people in.** Authorization code with PKCE, refresh tokens that rotate on every use, client credentials for services, and
+  the hosted sign-in, sign-up and password reset pages. One session gives single sign-on across every application.
+- **Keeps the organisation.** Tenants are organisations every service shares. Inside one, groups nest like an org chart, and a group
+  is a folder and a list of people at once.
+- **Decides.** Each service publishes a contract (its resource types, permissions and suggested roles), mirrors its resources into
+  the tree, and asks Hayat before it acts. Answers come from ownership, grants, placement under a group and tenant membership, and each
+  can say why.
+- **Tells services when to forget.** A Watch stream reports every policy change, so a service's cached answers empty the moment a
+  grant is revoked.
+
+## How it is built
+
+Hayat is one static Go binary. It runs four roles, together in one process or apart so each can scale and fail on its own:
+
+| Role | Port | What it serves |
+| --- | --- | --- |
+| `auth` | 8443 | The OpenID provider and the sign-in pages. The only role people's browsers reach. |
+| `admin` | 8080 | The admin API the console calls. Keep it internal. |
+| `api` | 7443 | The service API over gRPC, gRPC-Web and Connect: decisions, resource writes, Watch. |
+| `worker` | none | Sends email, cleans up expired rows and rotates signing keys. One active per region. |
+
+It stores everything in PostgreSQL (YugabyteDB through its own migration history), uses Redis for rate limits when there is more than
+one `auth` pod, and ships an optional web console as a second image. See [Roles and images](/docs/roles).
+
+## Start here
+
+<Cards cols={3}>
+  <Card to="/docs/docker-compose" icon={DatabaseIcon} title="Run with Docker Compose">Every role in its own container, on one machine.</Card>
+  <Card to="/docs/configuration" icon={SettingsIcon} title="Configuration">Every environment variable and its default.</Card>
+  <Card to="/docs/connect-an-app" icon={KeyIcon} title="Connect an app">Sign people in with any OpenID Connect library.</Card>
+  <Card to="/docs/services" icon={BuildingIcon} title="Plug a service in">Register it, publish a contract, ask for decisions.</Card>
+  <Card to="/docs/contracts" icon={CodeIcon} title="Contract reference">Every field of the YAML manifest, and its rules.</Card>
+  <Card to="/docs/security" icon={ShieldIcon} title="Security">Keys, passwords, tokens and sessions.</Card>
+</Cards>
+
+<Callout title="Built for Tabletsgo first">
+  [Tabletsgo](https://github.com/aidapedia/tabletsgo), the self-hosted database console, signs people in through Hayat in its
+  enterprise mode. It is the first service on Hayat, and its contract is a working example of everything on these pages.
+</Callout>
+
+## What is not there yet
+
+Google and GitHub sign-in, enterprise SSO and multi-factor authentication are the next phase. Multi-region on YugabyteDB comes after,
+and so does a decision cache shared through Redis: today each `api` pod caches in its own memory.

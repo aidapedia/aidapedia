@@ -3,9 +3,10 @@ import Features from '@/components/Features'
 import Hero from '@/components/Hero'
 import HowItWorks from '@/components/HowItWorks'
 import Install from '@/components/Install'
-import Showcase from '@/components/Showcase'
 import Sponsors from '@/components/Sponsors'
-import type { GitHubStats } from '@/hooks/useGitHubStats'
+import type { GitHubStats } from '@shared/hooks/useGitHubStats'
+import Showcase from '@shared/components/Showcase'
+import { PRODUCT_SCREENS } from '@shared/content/tabletsgo'
 import { usePageTitle } from '@shared/hooks/usePageTitle'
 
 export default function HomePage({ stats }: { stats: GitHubStats | null }) {
@@ -15,7 +16,7 @@ export default function HomePage({ stats }: { stats: GitHubStats | null }) {
     <>
       <Hero stats={stats} />
       <Databases />
-      <Showcase />
+      <Showcase product={PRODUCT_SCREENS} />
       <HowItWorks />
       <Sponsors />
       <Features />
