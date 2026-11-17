@@ -1,7 +1,82 @@
 @import "@aidapedia/shared/theme.css";
 
-@keyframes screen-progress {
-  from {
-    transform: scaleX(0);
+/*
+ * The homepage's motion (components/motion/). Every animation is opt-in under no-preference,
+ * so with reduced motion each piece simply shows its finished state.
+ */
+
+@keyframes word-rise {
+  from { transform: translateY(105%); }
+  to { transform: none; }
+}
+
+@keyframes word-swap {
+  from { opacity: 0; transform: translateY(70%); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .word-rise {
+    animation: word-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .word-swap {
+    animation: word-swap 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .marquee-track {
+    animation: marquee var(--marquee-duration, 40s) linear infinite;
+    animation-direction: var(--marquee-direction, normal);
+  }
+
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+
+  .caret {
+    animation: caret 1s steps(1) infinite;
+  }
+
+  .float-y {
+    animation: float-y 7s ease-in-out infinite;
+  }
+
+  .fade-in {
+    animation: fade-in 1.2s ease-out both;
+  }
+}
+
+/* Without motion the marquee wraps into a still list, and its copy (only there to loop) goes. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .marquee-track > ul {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .marquee-copy {
+    display: none;
   }
 }

@@ -2,15 +2,12 @@ import { useRef, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import PageBackdrop from '@shared/components/PageBackdrop'
 import SiteHeader from '@shared/components/SiteHeader'
+import { AIDAPEDIA_LINKS } from '@shared/content/company'
 import { useReveal } from '@shared/hooks/useReveal'
 import Brand from './Brand'
 import SiteFooter from './SiteFooter'
 
-const MENU = [
-  { to: '/projects', label: 'Project' },
-  { to: '/team', label: 'Team' },
-  { to: '/sponsor', label: 'Sponsor' },
-]
+const MENU = AIDAPEDIA_LINKS.map(({ path, label }) => ({ to: path, label }))
 
 export default function SiteShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()

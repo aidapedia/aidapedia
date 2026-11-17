@@ -4,7 +4,7 @@ The websites for Aidapedia's projects, one app per project, built with React, Ty
 
 | Folder | What it is | Address |
 | --- | --- | --- |
-| `apps/aidapedia/` | The company site: homepage, projects, team, sponsor. Its accent is the logo's teal. | `/`, `/projects`, `/team`, `/sponsor` |
+| `apps/aidapedia/` | The company site: homepage, about (its creator Kurniaji Gunawan's profile, copy in `src/content/portfolio.ts`; motion pieces in `src/components/motion/`), projects, contact, sponsor. Its accent is the logo's teal. | `/`, `/about`, `/projects`, `/contact`, `/sponsor` |
 | `apps/tabletsgo/` | The product page for [Tabletsgo](https://github.com/aidapedia/tabletsgo), a self-hosted database console, with its own title, menu and footer. Anything inside `.theme-tabletsgo` uses Tabletsgo's green. | `/tabletsgo`, `/tabletsgo/databases`, `/tabletsgo/docs`, `/tabletsgo/changelog`, `/tabletsgo/sponsor`, `/tabletsgo/compare/<name>` |
 | `apps/hayat/` | The product page for [Hayat](https://github.com/aidapedia/hayat), the self-hosted sign-in and access control service, with its own title, menu, footer and docs. Anything inside `.theme-hayat` uses Hayat's jade. | `/hayat`, `/hayat/docs`, `/hayat/changelog`, `/hayat/sponsor` |
 | `packages/shared/` | What they have in common: the theme, the header, buttons, icons, contact details, the Tabletsgo and Hayat facts Aidapedia quotes, the docs engine (`src/docs/`, `docs.css`, `mdx/remark-docs.js`), the GitHub stats and changelog, and the Vite setup (`vite.js`). | |

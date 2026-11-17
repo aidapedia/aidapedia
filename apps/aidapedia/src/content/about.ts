@@ -29,3 +29,9 @@ export const VALUES: { name: string; icon: ComponentType<IconProps>; detail: str
   { name: 'Knowledge for Everyone', icon: BookIcon, detail: 'We believe everyone should have access to useful technology.' },
   { name: 'Community Driven', icon: UsersIcon, detail: 'We grow by learning, building, and sharing together.' },
 ]
+
+// From Aidapedia's GitHub profile README (github.com/aidapedia/.github).
+export const TAGLINE = 'Building open source tools that help developers build, ship, and maintain software with confidence.'
+export const ORIGIN =
+  'Most of our projects are born from real-world problems we meet in our own homelabs and production environments. If a tool makes our workflow better, we believe it can help others too.'
+export const PRINCIPLES = ['Simple to use', 'Easy to self-host', 'Well documented', 'Reliable in production', 'Open to everyone']

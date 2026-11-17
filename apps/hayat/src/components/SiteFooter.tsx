@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { GitHubIcon, MailIcon } from '@shared/components/icons'
-import { SUPPORT_EMAIL } from '@shared/content/company'
+import { AIDAPEDIA_LINKS, SUPPORT_EMAIL } from '@shared/content/company'
 import { REPO_URL, docUrl } from '@shared/content/hayat'
 import { TABLETSGO_URL, aidapediaUrl } from '@shared/content/sites'
 import { MENU } from '@/content/product'
@@ -20,15 +20,7 @@ const COLUMNS: { title: string; links: { label: string; to?: string; href?: stri
       { href: TABLETSGO_URL, label: 'Tabletsgo, built on Hayat' },
     ],
   },
-  {
-    title: 'Company',
-    links: [
-      { href: aidapediaUrl('/#about'), label: 'About' },
-      { href: aidapediaUrl('/projects'), label: 'Projects' },
-      { href: aidapediaUrl('/team'), label: 'Team' },
-      { href: aidapediaUrl('/#contact'), label: 'Contact' },
-    ],
-  },
+  { title: 'Aidapedia', links: AIDAPEDIA_LINKS.map(({ path, label }) => ({ href: aidapediaUrl(path), label })) },
 ]
 
 export default function SiteFooter() {

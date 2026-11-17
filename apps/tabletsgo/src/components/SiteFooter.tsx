@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { GitHubIcon, MailIcon } from '@shared/components/icons'
-import { SUPPORT_EMAIL } from '@shared/content/company'
+import { AIDAPEDIA_LINKS, SUPPORT_EMAIL } from '@shared/content/company'
 import { aidapediaUrl } from '@shared/content/sites'
 import { REPO_URL, docUrl } from '@shared/content/tabletsgo'
 import { COMPETITORS } from '@/content/compare'
@@ -12,14 +12,7 @@ const LINK = 'inline-block py-1.5 text-sm text-ink-dim transition-colors hover:t
 const COLUMNS: { title: string; links: { label: string; to?: string; href?: string }[] }[] = [
   { title: 'Tabletsgo', links: MENU },
   { title: 'Compare and learn', links: COMPETITORS.map(({ slug, name }) => ({ to: `/compare/${slug}`, label: `Tabletsgo vs ${name}` })) },
-  {
-    title: 'Company',
-    links: [
-      { href: aidapediaUrl('/#about'), label: 'About' },
-      { href: aidapediaUrl('/team'), label: 'Team' },
-      { href: aidapediaUrl('/#contact'), label: 'Contact' },
-    ],
-  },
+  { title: 'Aidapedia', links: AIDAPEDIA_LINKS.map(({ path, label }) => ({ href: aidapediaUrl(path), label })) },
 ]
 
 export default function SiteFooter() {

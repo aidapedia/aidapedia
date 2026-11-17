@@ -10,12 +10,12 @@ function Sails() {
   ))
 }
 
-// The sails alone, for a panel to set behind its text.
-export default function SailsMark(props: SVGProps<SVGSVGElement>) {
+// The sails alone, for a panel to set behind its text. `duration` is one turn, in seconds.
+export default function SailsMark({ duration = 90, ...props }: SVGProps<SVGSVGElement> & { duration?: number }) {
   return (
     <svg viewBox="-270 -270 540 540" fill="currentColor" aria-hidden="true" {...props}>
       <g transform="rotate(45)">
-        <g className="animate-[spin_90s_linear_infinite] motion-reduce:animate-none">
+        <g className="animate-[spin_90s_linear_infinite] motion-reduce:animate-none" style={{ animationDuration: `${duration}s` }}>
           <Sails />
         </g>
       </g>

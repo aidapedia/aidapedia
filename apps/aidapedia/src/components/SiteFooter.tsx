@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { GitHubIcon, LinkedInIcon, MailIcon } from '@shared/components/icons'
-import { COMPANY_URL, CREATOR, LEGAL_NAME, SUPPORT_EMAIL } from '@shared/content/company'
+import { AIDAPEDIA_LINKS, COMPANY_URL, CREATOR, LEGAL_NAME, SUPPORT_EMAIL } from '@shared/content/company'
 import { docUrl } from '@shared/content/tabletsgo'
 import aidapediaLogo from '@/assets/aidapedia.png'
 import { PROJECTS } from '@/content/projects'
@@ -14,13 +14,8 @@ const COLUMNS = [
     links: PROJECTS.map((project) => ({ href: project.href, label: project.name })),
   },
   {
-    title: 'Company',
-    links: [
-      { to: '/#about', label: 'About' },
-      { to: '/team', label: 'Team' },
-      { to: '/sponsor', label: 'Sponsor' },
-      { to: '/#contact', label: 'Contact' },
-    ],
+    title: 'Aidapedia',
+    links: AIDAPEDIA_LINKS.map(({ path, label }) => ({ to: path, label })),
   },
 ]
 

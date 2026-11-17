@@ -1,8 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import AboutPage from '@/pages/AboutPage'
+import ContactPage from '@/pages/ContactPage'
 import HomePage from '@/pages/HomePage'
 import ProjectsPage from '@/pages/ProjectsPage'
 import SponsorPage from '@/pages/SponsorPage'
-import TeamPage from '@/pages/TeamPage'
 import ScrollManager from '@shared/components/ScrollManager'
 
 export default function App() {
@@ -11,8 +12,9 @@ export default function App() {
       <ScrollManager />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/team" element={<TeamPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/sponsor" element={<SponsorPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
