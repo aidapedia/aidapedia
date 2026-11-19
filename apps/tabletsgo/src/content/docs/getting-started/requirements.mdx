@@ -1,7 +1,7 @@
 ---
 title: Requirements
 description: "The server Tabletsgo needs, what the image includes, and what each mode adds."
-keywords: cpu memory ram disk system requirements arm64 amd64 postgresql mysql sqlite redis kafka
+keywords: cpu memory ram disk system requirements arm64 amd64 postgresql mysql mariadb sqlite redis kafka
 ---
 
 A 1 vCPU, 1 GB server with Docker is enough for a team. Tabletsgo itself uses about 150 to 250 MB of memory.
@@ -19,7 +19,7 @@ timing out. The measurements are in [the benchmark](https://github.com/aidapedia
 
 ## Software
 
-- **Docker** with Compose, on amd64 or arm64. The image carries everything else: Node.js, the PostgreSQL 18 and MySQL client tools
+- **Docker** with Compose, on amd64 or arm64. The image carries everything else: Node.js, the PostgreSQL 18 and MySQL/MariaDB client tools
   for backups, and the store's migrator.
 - **A current browser.** The console is a single-page app served by the same container.
 - **Network access** from the container to the databases you connect, or to an SSH host in front of them.
@@ -40,7 +40,7 @@ sign-in pages. See [Enterprise mode](/docs/enterprise).
 
 | Engine                                  | Status    |
 | --------------------------------------- | --------- |
-| PostgreSQL, MySQL, SQLite, Redis, Kafka | Supported |
+| PostgreSQL, MySQL, MariaDB, SQLite, Redis, Kafka | Supported |
 | MariaDB, MongoDB                        | Planned   |
 
 An instance admin chooses which of them the instance offers: see [Modules](/docs/modules).

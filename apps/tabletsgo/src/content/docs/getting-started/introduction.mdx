@@ -10,7 +10,7 @@ import { BuildingIcon, UserIcon } from '@shared/docs/icons'
 import { DOCS } from '@/content/product'
 
 Tabletsgo is a database console you run yourself. Browse and edit data, write queries, design schemas, build dashboards and
-workflows, and back up to any S3-compatible bucket, for PostgreSQL, MySQL, SQLite, Redis and Kafka, from one web app on your own
+workflows, and back up to any S3-compatible bucket, for PostgreSQL, MySQL, MariaDB, SQLite, Redis and Kafka, from one web app on your own
 server.
 
 It ships as one Docker image that runs in one of two modes.
@@ -41,7 +41,7 @@ One Node.js process serves the API and the web console on the same port, `3000` 
 start, so a new image upgrades it the first time it runs.
 
 Saved credentials are encrypted at rest with AES-256-GCM. The image includes the client tools the backups use: `pg_dump` and
-`pg_restore` from PostgreSQL 18, and the MySQL dump and restore tools.
+`pg_restore` from PostgreSQL 18, and MariaDB's build of `mysqldump` and `mysql`, which back up both MySQL and MariaDB.
 
 ## Deeper guides
 

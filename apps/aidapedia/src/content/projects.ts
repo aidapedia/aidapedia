@@ -33,7 +33,7 @@ export const PROJECTS: Project[] = [
     href: TABLETSGO_URL,
     repo: TABLETSGO_REPO_URL,
     license: 'Apache-2.0',
-    summary: 'Our first open-source product, built to support practical workflows and everyday engineering needs. A self-hosted console for PostgreSQL, MySQL, SQLite, Redis and Kafka.',
+    summary: 'Our first open-source product, built to support practical workflows and everyday engineering needs. A self-hosted console for PostgreSQL, MySQL, MariaDB, SQLite, Redis and Kafka.',
     screenshot: tabletsgoScreenshot('data-browser.jpg'),
   },
   {

@@ -9,15 +9,19 @@ is whoever holds Tabletsgo admin in Hayat.
 
 <H2 id="what-you-can-turn-off">What you can turn on and off</H2>
 
-| Module                    | Kind     | Settings                          |
-| ------------------------- | -------- | --------------------------------- |
-| PostgreSQL, MySQL, SQLite | Database | Query timeout, table row limit    |
-| Redis                     | Database | Query timeout                     |
-| Kafka                     | Database | Messages, bytes and time per read |
-| Backup                    | Feature  |                                   |
+| Module                             | Kind     | Settings                          |
+| ---------------------------------- | -------- | --------------------------------- |
+| PostgreSQL, MySQL, MariaDB, SQLite | Database | Query timeout, table row limit    |
+| Redis                              | Database | Query timeout                     |
+| Kafka                              | Database | Messages, bytes and time per read |
+| Backup                             | Feature  |                                   |
 
 Set them under **Administration → Modules**. They are stored in the instance, not in environment variables, so a change needs no
 restart. Workspaces only see what is on.
+
+Only an instance admin sees Administration: the solo owner, or, in enterprise mode, whoever holds the Tabletsgo admin role at
+Hayat's root. Open the workspace switcher at the top of the sidebar and pick **Administration** below your workspaces. To go
+back, open the switcher again and pick a workspace.
 
 ## Turning off a database in use
 

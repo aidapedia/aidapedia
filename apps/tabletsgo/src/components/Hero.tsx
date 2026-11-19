@@ -29,7 +29,7 @@ export default function Hero({ stats }: { stats: GitHubStats | null }) {
         for your whole team<span className="text-accent">.</span>
       </h1>
       <p className="mt-5 max-w-[60ch] text-pretty text-lg leading-relaxed text-ink-dim">
-        Tabletsgo is a self-hosted web console for PostgreSQL, MySQL, SQLite, Redis and Kafka. Browse data, write queries, design schemas, automate workflows and back up to S3 from one app you run yourself.
+        Tabletsgo is a self-hosted web console for PostgreSQL, MySQL, MariaDB, SQLite, Redis and Kafka. Browse data, write queries, design schemas, automate workflows and back up to S3 from one app you run yourself.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3 max-sm:w-full max-sm:[&>a]:flex-1">
         <ButtonLink href="#install" variant="primary" icon={TerminalIcon}>

@@ -183,6 +183,18 @@ export const SUPPORTED_ENGINES: Engine[] = [
     ],
   },
   {
+    id: 'mariadb',
+    name: 'MariaDB',
+    kind: 'Relational, over the network',
+    detail: 'The MySQL console, reading MariaDB as MariaDB: its defaults, system-versioned tables and query plans.',
+    highlights: [
+      'A spreadsheet-style grid with staged edits',
+      'SQL editor with MariaDB highlighting, history and saved queries',
+      'A visual schema designer that rolls back by version',
+      'Scheduled backups with MariaDB\'s own dump tools',
+    ],
+  },
+  {
     id: 'sqlite',
     name: 'SQLite',
     kind: 'A database file on this server',
@@ -222,20 +234,19 @@ export const SUPPORTED_ENGINES: Engine[] = [
 
 // `values` follow SUPPORTED_ENGINES' order.
 export const ENGINE_SUPPORT: { label: string; values: (boolean | string)[] }[] = [
-  { label: 'Browse', values: ['Tables', 'Tables', 'Tables', 'Key tree', 'Topics'] },
-  { label: 'Console', values: ['SQL', 'SQL', 'SQL', 'Commands', 'Kafka commands'] },
-  { label: 'Edit rows in the grid', values: [true, true, true, false, false] },
-  { label: 'Schema designer', values: [true, true, true, false, false] },
-  { label: 'Query analysis', values: [true, true, true, false, false] },
-  { label: 'Export and import rows', values: [true, true, true, false, false] },
-  { label: 'Scheduled backups and restore', values: [true, true, true, false, false] },
-  { label: 'SSH tunnels', values: [true, true, false, true, true] },
-  { label: 'Workflows', values: [true, true, true, true, true] },
-  { label: 'Dashboards', values: [true, true, true, true, true] },
+  { label: 'Browse', values: ['Tables', 'Tables', 'Tables', 'Tables', 'Key tree', 'Topics'] },
+  { label: 'Console', values: ['SQL', 'SQL', 'SQL', 'SQL', 'Commands', 'Kafka commands'] },
+  { label: 'Edit rows in the grid', values: [true, true, true, true, false, false] },
+  { label: 'Schema designer', values: [true, true, true, true, false, false] },
+  { label: 'Query analysis', values: [true, true, true, true, false, false] },
+  { label: 'Export and import rows', values: [true, true, true, true, false, false] },
+  { label: 'Scheduled backups and restore', values: [true, true, true, true, false, false] },
+  { label: 'SSH tunnels', values: [true, true, true, false, true, true] },
+  { label: 'Workflows', values: [true, true, true, true, true, true] },
+  { label: 'Dashboards', values: [true, true, true, true, true, true] },
 ]
 
 export const PLANNED_ENGINES = [
-  { id: 'mariadb', name: 'MariaDB' },
   { id: 'mongodb', name: 'MongoDB' },
 ]
 

@@ -39,7 +39,7 @@ export default function DatabasesPage() {
   return (
     <>
       <PageTitle eyebrow="Databases" title="One console, shaped to each database">
-        Connect PostgreSQL, MySQL, SQLite, Redis and Kafka side by side. The console adapts to what each one is, so a key store gets a key tree and a stream gets topics instead of a table list.
+        Connect PostgreSQL, MySQL, MariaDB, SQLite, Redis and Kafka side by side. The console adapts to what each one is, so a key store gets a key tree and a stream gets topics instead of a table list.
       </PageTitle>
       <ul className="grid gap-3 md:grid-cols-2">
         {SUPPORTED_ENGINES.map((engine) => (
@@ -49,7 +49,7 @@ export default function DatabasesPage() {
 
       <section className="pt-20 md:pt-24">
         <SectionHeading eyebrow="Compare" title="What each database gets">
-          Workflows and dashboards run on all four. The rest depends on what the engine can do.
+          Workflows and dashboards run on every engine. The rest depends on what the engine can do.
         </SectionHeading>
         <div className="mt-10 overflow-x-auto rounded-card border border-edge bg-card">
           <table className="w-full min-w-[680px] border-collapse text-[13px]">
@@ -82,10 +82,10 @@ export default function DatabasesPage() {
 
       <section className="pt-20 md:pt-24">
         <SectionHeading eyebrow="Planned" title="Coming next">
-          Waiting on one of these, or another engine?{' '}
+          Waiting on {PLANNED_ENGINES.map((engine) => engine.name).join(' or ')}, or another engine?{' '}
           <a href={`${REPO_URL}/issues`} rel="noopener" className="text-accent underline underline-offset-4">Tell us on GitHub</a>.
         </SectionHeading>
-        <ul className="mx-auto mt-10 grid max-w-[580px] gap-3 sm:grid-cols-2">
+        <ul className={`mx-auto mt-10 grid gap-3 ${PLANNED_ENGINES.length > 1 ? 'max-w-[580px] sm:grid-cols-2' : 'max-w-[290px]'}`}>
           {PLANNED_ENGINES.map((engine) => (
             <li key={engine.id} className="flex items-center gap-3 rounded-card border border-edge bg-card p-4 text-sm font-medium">
               <DbLogo id={engine.id} size={40} />
