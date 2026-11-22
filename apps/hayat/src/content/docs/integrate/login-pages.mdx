@@ -1,0 +1,42 @@
+---
+title: Login pages
+description: "Design what people see when one of your service's apps sends them to sign in: layout, logo, colors and words, published in versions."
+keywords: login page branding custom sign-in page design layout logo accent font draft publish history preview secured by hayat
+---
+
+When one of your service's apps sends someone to sign in, Hayat can show your brand instead of its own. A service's owners design it in
+the console at **Services → the service → Login page**. Instance admins design Hayat's own, which the console uses.
+
+## What you can set
+
+| Setting | Choices |
+| --- | --- |
+| Layout | Centered, split (a brand panel beside the form) or full-bleed |
+| Palette | Light, dark, or following the device |
+| Accent | The buttons, links and focus rings |
+| Brand panel | The color of the split and full-bleed panel; empty follows the accent |
+| Logo | One for light backgrounds and one for dark. PNG, JPEG or WebP. |
+| Font | System, humanist, geometric, rounded, serif or mono: font stacks only, so the page downloads no fonts |
+| Corners | The radius of fields and buttons, 0 to 20 px |
+| Words | The name beside the logo, the heading ("Sign in to Billing" by default), a subheading and the panel's tagline |
+| Links | Terms, privacy and help |
+| Sign-up | Whether the "Create an account" link shows |
+
+Every field is optional; an empty one takes Hayat's default. Hiding the sign-up link only leaves it off your page. Whether people may sign
+up at all is the instance's decision.
+
+## Draft, publish, history
+
+Every change saves a draft, shown live in the console exactly as Hayat will draw it. **Publish** makes the draft what people see, as a
+new version. **History** copies any earlier version back into the draft, and publishing it makes another version.
+
+## What a design can't change
+
+A design is data, never markup or CSS. Hayat draws the page from its own templates on its own sign-in domain, so:
+
+- the form always works the same way, and single sign-on and password managers keep working;
+- the page loads nothing from another origin, and colors are adjusted on the server so text stays readable;
+- logos are never SVG, which could run script on the sign-in origin;
+- **Secured by Hayat** always shows.
+
+If a design can't be read, Hayat shows its own page. A broken design never blocks sign-in.

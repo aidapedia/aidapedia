@@ -1,0 +1,68 @@
+---
+title: Agents
+description: "Members that aren't people: each lives in one tenant, answers to a sponsor, holds roles, and acts in your service with an agent token."
+keywords: agent bot automation principal sponsor handle tenant works in people_only IssueAgentToken CheckAgent agent_id token
+---
+
+An **agent** is a member that isn't a person: an automation, a bot, an AI assistant. It holds roles like anyone else and works in
+services, but it never signs in. Your service acts as it with a short-lived agent token and asks Hayat about every action, as it would for
+a person.
+
+## Adding one
+
+A tenant's owner or Tenant admin opens the tenant → **Agents** → **Add agent** (it takes `hayat.agents.manage`, which Tenant admin
+holds):
+
+| Field | What it is |
+| --- | --- |
+| Name and handle | How people see it. The handle (`@juno`) is unique in the tenant. |
+| Sponsor | The member who answers for it. |
+| Works in | The services that may act as it, by namespace (`tether, billing`). |
+
+What it may do is granted in the Resource Tree, like a person's: choose **Agent** when granting a role on a node.
+
+## What an agent can never hold
+
+Hayat answers for an agent only inside its own tenant, and only while both it and its sponsor are active. Even then, an agent:
+
+- is never an **owner** of a node;
+- isn't reached by a grant to the whole tenant, because "everyone" means people;
+- never holds Hayat's own `hayat.*` permissions, or a permission its contract marks
+  [`people_only`](/docs/contracts#permissions), such as approving or administering. Granting it a role with one is refused.
+
+When a sponsor leaves the tenant, their agents pause (`sponsor_left`); giving one a new sponsor resumes it. The audit log keeps the
+sponsor's name on everything an agent does. An admin can also pause, resume or remove an agent.
+
+## Acting as an agent
+
+A service sees only the agents that work in it. To act as one, it asks for an agent token, then checks every action with the agent's id
+instead of a person's:
+
+```go title="agent.go"
+token, expires, err := hz.IssueAgentToken(ctx, agentID)   // sub "agent:<id>", aud your service, 1 hour
+
+ok, err := hz.CheckAgent(ctx, agentID, "billing.ledger.post", hayat.Ref("billing/ledger", id))
+ids, err := hz.LookupAgent(ctx, agentID, "billing.ledger.view", "billing/ledger", tenantID)
+```
+
+A token is refused unless the agent and its sponsor are active and the agent works in your service. Where an agent token reaches your
+API, verify it offline with `VerifyAgentToken(ctx, raw, "billing")`: the claims name the agent (`sub: agent:<id>`), its tenant and its
+sponsor (`user:<id>`), and like a person's token they never say what it may do.
+
+The Node SDK has no agent helpers yet. Ask through its generated clients with `agentId` in place of `userId`:
+
+```ts title="agent.ts"
+const { allowed } = await hayat.authz.check({ agentId, permission: 'billing.ledger.post', resource: ref('billing/ledger', id) })
+```
+
+## In the service API
+
+| Call | Does |
+| --- | --- |
+| `AgentService.GetAgent` | Reads one agent that works in your service. |
+| `AgentService.ListTenantAgents` | A tenant's agents that work in your service. |
+| `AgentService.IssueAgentToken` | A token to act as the agent, valid for an hour. |
+| `Check`, `BatchCheck`, `PermissionsAt`, `LookupResources` | Take `agent_id` instead of `user_id`. |
+| `LookupSubjects` | Lists agents beside people, with `agent_id` set. |
+
+See the [service API](/docs/service-api#agentservice-agents).

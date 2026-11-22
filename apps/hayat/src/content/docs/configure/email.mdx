@@ -32,6 +32,14 @@ The compose file sets `HAYAT_SMTP_URL` to its Mailpit container unless you set y
 | Finish setting up your Hayat account | Someone signs up. The account stays pending until they choose a password from the link; only the newest link works. |
 | You already have a Hayat account | Someone signs up with an address that already has an active account. It links to sign-in and password reset. |
 | Reset your Hayat password | Someone asks on the sign-in page and the address has an account. |
+| Your Hayat password is locked for a while | Ten wrong passwords in a row paused the password for 15 minutes. |
+| An authenticator app was added to your Hayat account | The person added an authenticator app. |
+| A passkey was added to your Hayat account | The person added a passkey. |
+| A sign-in method was removed from your Hayat account | An authenticator app or passkey was removed. |
+| A recovery code was used to sign in to Hayat | Someone signed in with one of the account's recovery codes. |
+| Two-step verification was reset on your Hayat account | An instance admin removed every factor and signed the person out. |
+
+Every security notice says what to do if it wasn't them.
 
 The pages say the same thing whether or not an address has an account, so neither reveals who is registered. Both are rate-limited per network address and per email address;
 see [Security](/docs/security#rate-limits).

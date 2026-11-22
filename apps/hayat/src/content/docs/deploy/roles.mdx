@@ -17,9 +17,9 @@ hayat serve --role=auth,admin     # several, comma-separated
 
 | Role | Port | Reached by | Does |
 | --- | --- | --- | --- |
-| `auth` | 8443 | People's browsers, and your apps | The OpenID provider (discovery, keys, tokens, userinfo, logout) and the hosted sign-in, sign-up, reset and setup pages. Its public address is the issuer. |
+| `auth` | 8443 | People's browsers, and your apps | The OpenID provider (discovery, keys, tokens, userinfo, logout), the hosted sign-in, sign-up, reset, two-step and setup pages, each service's login page, and uploaded images at `/media/<id>`. Its public address is the issuer. |
 | `admin` | 8080 | The console only | The admin API (Connect over HTTP/JSON) the console calls. Keep it on an internal network. |
-| `api` | 7443 | Your services only | The service API over gRPC (h2c), gRPC-Web and Connect on one port: decisions, resource writes, people, Watch, contract publishing. |
+| `api` | 7443 | Your services only | The service API over gRPC (h2c), gRPC-Web and Connect on one port: decisions, resource writes, people, agents, Watch, contract publishing and enrollment. |
 | `worker` | none | Nobody | Sends queued email, deletes rows nothing can use any more, and rotates signing keys when they are due. |
 
 Every role also serves `/healthz` (the process is up) and `/readyz` (it can reach the database) on port `9090`.
@@ -29,6 +29,7 @@ Every role also serves `/healthz` (the process is up) and `/readyz` (it can reac
 The only role that must be public. It renders the sign-in pages and runs the provider, keeps sessions in a cookie on the issuer's
 origin, and rate-limits sign-in, sign-up and password reset. With more than one `auth` pod, set `HAYAT_REDIS_URL` so they share the
 counters; without it, each pod counts on its own. On its first start an instance with no admin logs a [setup link](/docs/quick-start).
+It serves uploaded images, so it must reach the [image store](/docs/storage) the `admin` role writes to.
 
 ### admin
 
@@ -38,7 +39,7 @@ one origin. Nothing else needs it.
 ### api
 
 What your services call with their client-credentials token. A service may ask about any person, but writes only nodes of its own
-namespace. Each `api` pod keeps a decision cache in memory, keyed by revisions, so a policy change makes old entries unreachable.
+namespace. `EnrollmentService` is the one part that takes no token, since an enrollment code is its credential. Each `api` pod keeps a decision cache in memory, keyed by revisions, so a policy change makes old entries unreachable.
 
 ### worker
 

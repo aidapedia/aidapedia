@@ -22,6 +22,8 @@ and one session across all of them, an admin draws the organisation once, and ev
 
 - **Signs people in.** Authorization code with PKCE, refresh tokens that rotate on every use, client credentials for services, and
   the hosted sign-in, sign-up and password reset pages. One session gives single sign-on across every application.
+- **Offers every way in.** Passwords, Google, GitHub and company SSO (Okta, Entra ID, Keycloak…), with two-step verification and
+  passkeys. Each service can brand the page its apps send people to.
 - **Keeps the organisation.** Tenants are organisations every service shares. Inside one, groups nest like an org chart, and a group
   is a folder and a list of people at once.
 - **Decides.** Each service publishes a contract (its resource types, permissions and suggested roles), mirrors its resources into
@@ -62,5 +64,4 @@ one `auth` pod, and ships an optional web console as a second image. See [Roles 
 
 ## What is not there yet
 
-Google and GitHub sign-in, enterprise SSO and multi-factor authentication are the next phase. Multi-region on YugabyteDB comes after,
-and so does a decision cache shared through Redis: today each `api` pod caches in its own memory.
+Multi-region on YugabyteDB, and a decision cache shared through Redis: today each `api` pod caches in its own memory.

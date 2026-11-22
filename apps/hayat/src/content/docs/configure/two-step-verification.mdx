@@ -1,0 +1,49 @@
+---
+title: Two-step verification
+description: "Authenticator apps, passkeys and recovery codes, requiring them for a tenant, and resetting someone who lost every device."
+keywords: two-step verification mfa 2fa totp authenticator app passkey webauthn recovery codes require tenant reset step-up
+---
+
+A password is one factor. People can add a second at **Account → Two-step verification**, and a tenant can require one of every member.
+
+## Factors
+
+| Factor | What it is |
+| --- | --- |
+| Authenticator app | Any app that makes 6-digit codes (TOTP). Its secret is encrypted under the master key and never passes through the console. |
+| Passkey | A key kept by the device or a password manager, checked with the device's lock. Signs in on its own as well. |
+| Recovery codes | Ten one-time codes, made with the first factor. Each works once; make a fresh set when running low. |
+
+Factors are added only on Hayat's own pages, never in a service.
+
+## Signing in with one
+
+After a password, a reset link or Google/GitHub, Hayat asks for the code, the passkey or a recovery code before it starts the session. A
+passkey also signs in on its own: **Sign in with a passkey** on the sign-in page counts as both factors, since the device checks its
+owner.
+
+Single sign-on respects it too: a session made before someone added a factor, or before their tenant required one, isn't accepted where
+the account now needs more.
+
+<Callout kind="warning" title="Passkeys belong to the issuer's host">
+  A passkey is bound to the host name in `HAYAT_ISSUER`. It keeps working as long as that host stays the same; moving Hayat to another
+  host means everyone adds their passkeys again. An IP address can't hold passkeys.
+</Callout>
+
+## Requiring it for a tenant
+
+A tenant's owner or Tenant admin turns on **Require two-step verification** in the tenant's settings. A member who hasn't set it up is
+asked to before they get in, on Hayat's own page, right after their password.
+
+People who sign in through the tenant's own [company provider](/docs/sign-in-methods#a-tenants-own-provider) follow that provider's
+rules instead.
+
+## Lost every device
+
+An instance admin can reset someone's two-step verification from their page under **Users**. It removes every authenticator app, passkey
+and recovery code, signs the person out everywhere, and emails them. They sign in with their password and set it up again.
+
+## Emails people get
+
+Hayat tells the account's owner when an authenticator app or a passkey is added, when a factor is removed, when a recovery code is used,
+and when an admin resets their two-step verification. See [Email](/docs/email).

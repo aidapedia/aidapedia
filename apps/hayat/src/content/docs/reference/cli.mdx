@@ -1,7 +1,7 @@
 ---
 title: Command line
-description: "Every hayat command: serve, migrate, setup-link, rotate-keys, import, seed and version."
-keywords: cli command serve migrate status setup-link rotate-keys seed import version role
+description: "Every hayat command: serve, migrate, setup-link, rotate-keys, import, enrollment-code, seed and version."
+keywords: cli command serve migrate status setup-link rotate-keys seed import enrollment-code version role
 ---
 
 The image's entrypoint is the `hayat` binary, so with Docker a command is the container's arguments
@@ -51,6 +51,17 @@ hayat import --file bundle.json [--app-url https://app.example.com] [--out resul
 ```
 
 Loads another system's people, tenants, groups, resources and grants from a bundle. See [Import accounts](/docs/import).
+
+## enrollment-code
+
+```bash
+hayat enrollment-code --service billing [--name Billing] [--by admin@example.com] [--ttl 24h]
+```
+
+Prints a one-time code a service redeems for its credentials, and any earlier open code for that service is revoked. For a service Hayat
+doesn't know, it registers it under `--name`; for one it knows, it rotates the service's API secret. `--by` says whose code it is (the
+first instance admin by default), which makes them a new service's owner. `--ttl` is between `5m` and `168h`. See
+[Enroll with a code](/docs/services#enroll-with-a-code).
 
 ## seed
 

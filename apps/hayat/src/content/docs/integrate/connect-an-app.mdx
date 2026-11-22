@@ -8,6 +8,9 @@ Hayat is a standard OpenID Connect provider, so any certified OIDC library signs
 they sign in there (or are already signed in, which is the single sign-on), and Hayat sends them back with a code your app trades for
 tokens.
 
+How they sign in (a password, Google, their company's SSO, a passkey, a second factor) happens on Hayat's pages and changes nothing in
+your app. Your service's owners can brand those pages: see [Login pages](/docs/login-pages).
+
 ## Add a sign-in client
 
 Every OAuth client belongs to a [service](/docs/services), and the service's owners manage its clients. In the console, open the
@@ -114,6 +117,10 @@ redirect URI. It ends their Hayat session, which signs them out of every app tha
 
 ## Let each person's theme follow them
 
-Each account has one theme (accent, density, corners, font, sidebar and content width), chosen in Hayat's console. Read it with
-`DirectoryService.GetUserAppearance` on each page load and apply it; don't keep a copy, so a change shows the next time they load a page.
-Every field is optional, and an empty one means your app's own default.
+Each account has one theme (colors, UI scale, density, corners, font, sidebar and page width) that every app follows, chosen at
+**Account → Appearance** in Hayat's console. A person can also give any one app a theme of its own there, and other apps keep following
+the account's.
+
+Read it with `DirectoryService.GetUserAppearance` on each page load and apply it. Hayat answers with the theme that applies to the
+calling service, so your app never chooses between the two (`own` says which it got). Don't keep a copy, so a change shows the next time
+they load a page. Every field is optional, and an empty one means your app's own default.

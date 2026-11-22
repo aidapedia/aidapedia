@@ -5,7 +5,7 @@ keywords: postgres postgresql yugabyte yugabytedb redis HAYAT_DATABASE_URL HAYAT
 ---
 
 Hayat keeps everything in one SQL database: accounts, sessions, tenants, the tree, roles and grants, contracts, OAuth clients and the
-encrypted signing keys. Each module owns its tables.
+encrypted signing keys. Each module owns its tables. The only thing it keeps elsewhere is uploaded images, on a volume or in a bucket.
 
 ## PostgreSQL
 
@@ -55,3 +55,6 @@ Decisions are cached in each `api` pod's memory, not in Redis. A shared decision
 
 Back up the database as you would any production PostgreSQL. A restore needs the same `HAYAT_MASTER_KEY` the database was written with,
 since the signing keys in it are encrypted with it. Keep the two apart, and both safe.
+
+Uploaded images are not in the database. Back up their volume or bucket together with it: a restored database points at images by id.
+See [Image storage](/docs/storage).

@@ -9,9 +9,9 @@ steps, and the [SDKs](/docs/sdks) cover the code side of each.
 
 <Steps>
   <Step title="Register it">
-    An instance admin opens the console → **Services** → **Register service**. You get a namespace (`billing`), API credentials (a
-    client id and secret, shown once), and a first owner. Owners approve contracts that touch the namespace, name other owners, rotate
-    the secret and manage the service's sign-in clients.
+    An instance admin either makes an [enrollment code](#enroll-with-a-code) the service redeems for its own credentials, or registers
+    it by hand. Either way you get a namespace (`billing`), API credentials, and a first owner. Owners approve contracts that touch the
+    namespace, name other owners, rotate the secret, and manage the service's sign-in clients and [login page](/docs/login-pages).
   </Step>
   <Step title="Publish its contract">
     The contract declares the resource types the service files in the tree, the permissions that mean something on them, and the roles
@@ -24,6 +24,49 @@ steps, and the [SDKs](/docs/sdks) cover the code side of each.
     Before showing or changing something, it asks whether this person holds the permission on that node.
   </Step>
 </Steps>
+
+## Enroll with a code
+
+An enrollment code lets a service set itself up, typically from its own first-run setup page, so nobody copies a secret by hand.
+
+<Steps>
+  <Step title="Make a code">
+    In the console, **Services** → **Enroll service**, or from the command line:
+
+    ```bash
+    hayat enrollment-code --service billing --name Billing --ttl 24h
+    ```
+
+    A code (`hye_…`) is single use and lasts from 5 minutes to 7 days, a day by default. Making another for the same service revokes the
+    last, and an open code can be revoked from the console. Whoever made it owns the service it registers.
+  </Step>
+  <Step title="Paste it into the service">
+    The service calls `EnrollmentService.Enroll` on the `api` role, the one call that needs no access token: the code is the credential.
+    `InspectEnrollment` shows what a code would do (register or rotate, which service, made by whom, until when) without spending it, so a
+    setup page can show it before the person confirms.
+  </Step>
+  <Step title="Keep what comes back">
+    The answer carries the service's API credentials, the issuer and, when the service sent its address, the id of a public sign-in
+    client with `<app_url>/callback` as its redirect.
+  </Step>
+</Steps>
+
+`Enroll` takes everything a first start needs, so one paste sets the service up:
+
+| Field | Does |
+| --- | --- |
+| `code` | The enrollment code. |
+| `manifest` | The service's contract, published when it is newer than the latest version. Optional. |
+| `display_name`, `description` | Used when the code registers the service. |
+| `app_url` | The service's public address. Makes a public sign-in client for `<app_url>/callback`, or keeps the one already there. |
+| `admin_role` | A role of the service's own namespace (`billing.admin`) granted at the root to whoever made the code. |
+| `admin_email` | Grants `admin_role` to this person instead. Someone Hayat doesn't know yet is invited by email. |
+
+A code that fails is given back, so the service can fix its request and try again. Later, a code an owner makes on the service's
+**Enrollment** tab **re-enrolls** it: that rotates its API secret, and the old one stops working at once.
+
+To register by hand instead, choose **Services** → **Register manually**: the API credentials are shown once, to copy into the
+service's configuration.
 
 ## Publish a contract
 

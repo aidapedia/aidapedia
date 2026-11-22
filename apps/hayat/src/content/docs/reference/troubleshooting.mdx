@@ -19,6 +19,12 @@ misbehaving later. Read the first error in the logs: `docker compose logs hayat-
 | `HAYAT_ISSUER is not a URL` | Include the scheme: `https://auth.example.com`. |
 | `HAYAT_DATABASE_ENGINE must be postgres or yugabyte` | Fix the spelling, or unset it for PostgreSQL. |
 | `migrate: … changed after it was applied` | A shipped migration file was edited. Use the release's image as published. |
+| `HAYAT_SESSION_IDLE_TIMEOUT must be 0 (off) or at least 15m` | Use `0`, or a Go duration of `15m` or more. |
+| `HAYAT_BREACHED_PASSWORDS must be hibp or off` | Fix the spelling, or unset it. |
+| `set both HAYAT_TURNSTILE_SITE_KEY and HAYAT_TURNSTILE_SECRET_KEY, or neither` | Turnstile needs both keys. |
+| `HAYAT_STORAGE must be local or s3` | Fix the spelling, or unset it for `local`. |
+| `HAYAT_STORAGE_DIR … isn't writable by this process` | The `auth` and `admin` roles check the image store at boot. Make the mounted directory writable by uid `65532`, and mount the same one into both. |
+| `s3 …: 403 Forbidden` (or another status) | With `HAYAT_STORAGE=s3`, check the bucket, keys, endpoint, and `HAYAT_S3_PATH_STYLE=true` for MinIO. See [Image storage](/docs/storage). |
 
 ## No setup link in the logs
 
@@ -49,10 +55,36 @@ Check the client under its service in the console.
 A refresh token used twice revokes its whole family, so two tabs or workers refreshing at the same moment sign the person out. Refresh in
 one place and share the result.
 
+With `HAYAT_SESSION_IDLE_TIMEOUT` set, a session nobody used for that long ends too. And when someone's tenant starts requiring two-step
+verification, a session without it is asked for more on its next sign-in.
+
+## "Too many sign-in attempts" for one person
+
+Ten wrong passwords in a row pause that account's password for 15 minutes, and the message reads like the rate limit on purpose. The owner
+gets an email; they can wait, or reset their password, which lifts it.
+
+## Passkeys stopped working
+
+A passkey belongs to the host name in `HAYAT_ISSUER`. If the issuer moved to another host, everyone adds their passkeys again. An issuer
+on an IP address can't hold passkeys at all.
+
+## Company sign-in fails
+
+- The provider must have `<HAYAT_ISSUER>/sso/callback` registered as a redirect URI, exactly.
+- A tenant's provider signs in only addresses at its **verified** domains. Check the TXT record `_hayat-challenge.<domain>` is published.
+- Someone new is created only when the provider creates accounts (just-in-time); otherwise they need an account first.
+
+## The console asks to confirm it's you
+
+Sensitive changes need a sign-in within the last ten minutes. The console sends you to Hayat to confirm, then back. See
+[Security](/docs/security#admins).
+
 ## A check says no when it should say yes
 
 - **The resource was never mirrored.** An unknown resource is a "no". Make sure your service writes the node when it creates the thing.
 - **The person isn't on the tenant's roster.** For a type that requires membership, nothing else counts.
+- **It's an agent.** An agent holds nothing while it or its sponsor is paused, never through a grant to the whole tenant, and never a
+  `people_only` permission. Ask with `agent_id`, not `user_id`.
 - **A sibling team.** Placement only opens a resource to its own group's branch, never to a team beside it.
 - **The grant doesn't reach.** A grant that doesn't inherit counts only on its own node, and a grant on a group reaches nothing above it.
 - **It just changed.** Make sure your service runs `watch`, or its cache keeps old answers for up to 10 seconds.

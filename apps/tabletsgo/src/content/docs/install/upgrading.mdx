@@ -1,7 +1,7 @@
 ---
 title: Upgrading
 description: "Pull the new image and start it. The store migrates itself on the way up."
-keywords: update docker pull version snapshot SOLO_OWNER
+keywords: update docker pull version snapshot SOLO_OWNER hayat minimum version compatibility
 ---
 
 Pull the new image and start it again. Your data stays in the volume, and the new image migrates the store before it serves anything.
@@ -23,6 +23,13 @@ Pull the new image and start it again. Your data stays in the volume, and the ne
 </CodeTabs>
 
 To stay on one release, use a version tag instead of `latest`, as in `ghcr.io/aidapedia/tabletsgo:1.0.0`.
+
+<H2 id="hayat-first">In enterprise mode: Hayat first</H2>
+
+Each Tabletsgo release needs a minimum Hayat version. Today that is 1.2.0. When a release raises it, its release notes say
+*Requires Hayat ≥ X*. Upgrade Hayat first, then Tabletsgo. Hayat's service API only grows, so the Tabletsgo you run now keeps
+working on the newer Hayat. Upgrading in the other order leaves Tabletsgo logging a `⛔` line at every start, and it refuses to
+enroll until Hayat catches up. **Administration → Hayat** shows which Hayat version answers.
 
 ## Migrations
 

@@ -1,7 +1,7 @@
 ---
 title: SDKs
 description: "The Go and Node clients for the service API: credentials, a decision cache, Watch, read-your-writes and token checks."
-keywords: sdk go node typescript client check lookup upsert delete watch verify middleware cache ttl @aidapedia/hayat
+keywords: sdk go node typescript client check lookup upsert delete watch verify middleware cache ttl @aidapedia/hayat MinHayatVersion minHayatVersion version compatibility
 ---
 
 Both SDKs own what every service would otherwise write by hand: the client-credentials token, a short decision cache emptied per tenant by
@@ -24,6 +24,7 @@ generated clients for every RPC, for what the helpers don't cover.
         Issuer:       "https://auth.example.com",
         ClientID:     os.Getenv("HAYAT_CLIENT_ID"),
         ClientSecret: os.Getenv("HAYAT_CLIENT_SECRET"),
+        MinHayatVersion: "1.2.0", // the newest "Since" among the RPCs you call
     })
     go hz.Watch(ctx)
     ```
@@ -37,19 +38,23 @@ generated clients for every RPC, for what the helpers don't cover.
       issuer: 'https://auth.example.com',
       clientId: process.env.HAYAT_CLIENT_ID!,
       clientSecret: process.env.HAYAT_CLIENT_SECRET!,
+      minHayatVersion: '1.2.0', // the newest "Since" among the RPCs you call
     })
     void hayat.watch()
     ```
   </Tab>
 </CodeTabs>
 
-Creating a client fetches the issuer's discovery document (for the token endpoint and the keys) and makes no API call.
+Creating a client asks the `api` role which Hayat version it runs and refuses one older than `MinHayatVersion` (see
+[Which Hayat you need](#minimum-version)). Then it fetches the issuer's discovery document, for the token endpoint and the keys. It
+fetches no token until the first call.
 
 | Setting | Go | Node | Default |
 | --- | --- | --- | --- |
 | The `api` role | `APIURL` | `apiUrl` | required |
 | The issuer | `Issuer` | `issuer` | required |
 | Service credentials | `ClientID`, `ClientSecret` | `clientId`, `clientSecret` | required |
+| The oldest Hayat you work with | `MinHayatVersion` | `minHayatVersion` | required; below `1.2.0` is raised to it |
 | How long an answer is reused | `CacheTTL` | `cacheTtlMs` | 10 seconds; Go: negative turns it off, Node: `0` |
 | HTTP client | `HTTPClient` | | `http.DefaultClient` |
 
@@ -64,7 +69,29 @@ Creating a client fetches the issuer's discovery document (for the token endpoin
 | `Watch(ctx)` | `watch(signal?)` | Stream policy changes and drop cached answers, reconnecting with backoff. |
 | `VerifyAccessToken(ctx, raw, aud)` | `verifyAccessToken(token, aud?)` | Check a person's access token offline. |
 | `Middleware(aud)` | `middleware(aud?)` | Verify the bearer token on each request, or answer 401. |
-| `Authz`, `Tree`, `Directory`, `Schema` | `authz`, `tree`, `directory`, `schema` | The generated clients, for every other RPC. |
+| `Authz`, `Tree`, `Directory`, `Schema`, `Agents` | `authz`, `tree`, `directory`, `schema` | The generated clients, for every other RPC. |
+| `ServerVersion()` | `serverVersion` | The version Hayat reported when the client was created. |
+| `hayat.CheckVersion(ctx, apiURL, min, hc)` | `checkHayatVersion(apiUrl, min)` | The version check alone, with no credentials. Use it before your service enrolls. |
+
+<H2 id="minimum-version">Which Hayat you need</H2>
+
+Every service declares the oldest Hayat release it works with, and the SDKs won't start without it. Each RPC in the
+[service API](/docs/service-api#versioning) says which release it first shipped in. Your minimum is the newest of those among the RPCs
+you call. A client that only checks permissions and mirrors resources needs `1.2.0`, the floor: that's the first Hayat that reports
+its version. Raise the minimum in the same change that starts calling a newer RPC.
+
+Against an older Hayat, creating a client fails, and nothing reaches the token endpoint:
+
+- **Go:** `errors.Is(err, hayat.ErrHayatTooOld)`. The `*hayat.VersionError` carries `Have` and `Need`.
+- **Node:** a `HayatVersionError` with `have` and `need`.
+
+`Have` is empty when Hayat is older than 1.2.0 and can't report a version. A Hayat built from source reports `dev` and always passes.
+
+Hayat only adds to the service API, so a newer Hayat always works with your service. When your service needs a newer one, upgrade Hayat
+first, then deploy your service.
+
+The Go SDK also acts for [agents](/docs/agents): `CheckAgent`, `LookupAgent`, `GetAgent`, `TenantAgents`, `IssueAgentToken` and
+`VerifyAgentToken`. `CheckAgent` shares the decision cache and Watch with `Check`.
 
 ## Naming a node
 

@@ -67,6 +67,22 @@ Everything Hayat knows is in its PostgreSQL database: accounts, tenants, the tre
 keys. Back it up like any production database, together with a separately stored copy of the master key. Run PostgreSQL with a
 replicated setup such as CloudNativePG or Patroni if Hayat must survive losing a machine.
 
+## Images have a home
+
+People's pictures and logos live outside the database, on a volume the `auth` and `admin` roles both mount or in an S3-compatible
+bucket. With several pods, use a bucket or a ReadWriteMany volume, and back it up with the database. See [Image storage](/docs/storage).
+
+## The issuer's host is final
+
+Passkeys belong to the issuer's host name, so moving Hayat to another host means everyone adds their passkeys again, and an IP address
+can't hold them. Pick the host name you will keep.
+
+## Account security suits you
+
+New passwords are checked against Have I Been Pwned by default. Consider `HAYAT_SESSION_IDLE_TIMEOUT` to end sessions left unused, and
+Cloudflare Turnstile (`HAYAT_TURNSTILE_*`) if bots find your sign-up page. Set up [sign-in methods](/docs/sign-in-methods) and, for
+tenants that need it, [two-step verification](/docs/two-step-verification).
+
 ## Migrations run before each release
 
 Run `hayat migrate` once per release before starting the new roles. The compose file does this with its `hayat-migrate` service; in

@@ -39,6 +39,9 @@ x-hayat: &hayat
 
 The roles start only once `hayat-migrate` has finished, so a new image never runs against an old schema.
 
+Every `hayat-*` service also mounts one `media` volume at `/var/lib/hayat/media`, where uploaded pictures and logos are kept. Back it up
+with `postgres`'s, or set `HAYAT_STORAGE=s3` in `.env` to keep them in a bucket instead. See [Image storage](/docs/storage).
+
 ## The .env file
 
 Copy `.env.example` to `.env` beside the compose file. On a server, change at least these:
@@ -72,6 +75,25 @@ HAYAT_VERSION=0.3.0 docker compose up -d      # pin a release instead of latest
 
 The images are tagged with each release (`0.3.0`), its minor line (`0.3`) and `latest`, for amd64 and arm64. Set `HAYAT_VERSION` in
 `.env` to stay on one; both `hayat` and `hayat-console` follow it. See [Upgrading](/docs/upgrading).
+
+## On Coolify
+
+`deploy/coolify/docker-compose.yml` runs the same roles on [Coolify](https://coolify.io), built from the repo's source instead of the
+published image. Create a resource from the Git repository with the **Docker Compose** build pack, base directory `/deploy/coolify` and
+compose location `/docker-compose.yml`. Then give `hayat-auth` its public domain (the issuer) and, optionally, `hayat-console` one;
+keep `hayat-admin` unpublished.
+
+It needs `HAYAT_MASTER_KEY`, `HAYAT_ISSUER`, `HAYAT_CONSOLE_URL` and `HAYAT_SMTP_URL` in Coolify's environment variables; Coolify
+generates the PostgreSQL password. Data lives under `/mnt/data/hayat` on the server. Create the media directory before the first deploy,
+writable by Hayat's uid:
+
+```bash
+sudo mkdir -p /mnt/data/hayat/postgres /mnt/data/hayat/media
+sudo chown 65532:65532 /mnt/data/hayat/media
+```
+
+The header of the compose file covers the rest, including running behind a Cloudflare Tunnel and exposing `hayat-api` to services on
+other hosts.
 
 ## Testing against YugabyteDB
 

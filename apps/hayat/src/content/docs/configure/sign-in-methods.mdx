@@ -1,0 +1,83 @@
+---
+title: Sign-in methods
+description: "Google, GitHub and company SSO for the whole instance, a tenant's own identity provider on its verified domains, and company-only sign-in."
+keywords: sso google github okta entra keycloak oidc company sign-in identity provider federation callback domain txt verify enforce jit link
+---
+
+Besides an email and a password, people can sign in to Hayat with another account. Hayat stays the identity provider for every service:
+the trip to Google or a company's provider ends in an ordinary Hayat session, so your services never talk to them and need no change.
+
+There are two levels:
+
+| Level | Who sets it up | Providers | Who it signs in |
+| --- | --- | --- | --- |
+| The instance | An instance admin, at **Sign-in methods** | Google, GitHub and one company OpenID Connect provider | Anyone whose address the provider verified |
+| A tenant | Its owner or a Tenant admin, on the tenant's **Company sign-in** tab | The tenant's own OpenID Connect providers | Only addresses at the tenant's verified domains |
+
+## Set up a provider
+
+<Steps>
+  <Step title="Register Hayat with the provider">
+    In Google Cloud, GitHub, Okta, Entra ID, Keycloak or any other OpenID Connect provider, create an OAuth app with this redirect URI:
+
+    ```text
+    https://auth.example.com/sso/callback
+    ```
+
+    It is `<HAYAT_ISSUER>/sso/callback`, the same for every provider. The console shows it at the top of **Sign-in methods**.
+  </Step>
+  <Step title="Paste its client ID and secret">
+    For a company provider, also enter its issuer, the provider's `https://` address (such as `https://acme.okta.com`). Hayat reads its
+    discovery document from there. The secret is encrypted under `HAYAT_MASTER_KEY` and never shown again; leave the field empty to keep it.
+  </Step>
+  <Step title="Turn it on">
+    An enabled provider shows as a button on every sign-in page, with the name you gave it.
+  </Step>
+</Steps>
+
+Every trip uses PKCE and a single-use state bound to the browser, so a callback can't be replayed or started from another tab.
+
+## Which account someone signs in to
+
+Hayat decides in a fixed order, because getting this wrong is how accounts are taken over:
+
+1. An outside account already linked to a Hayat account signs in to that account.
+2. Linking from **Account → Sign-in methods** links to whoever is signed in.
+3. Otherwise only an address the provider says it verified counts, and for a tenant's provider only addresses at its verified domains.
+4. An existing account with that address is linked, and a pending one becomes active. An instance admin's account is never linked by
+   address.
+5. Someone new gets an account: always from Google or GitHub, and from a company provider only when it creates accounts, which also adds
+   them to the tenant.
+
+People link and unlink other accounts at **Account → Sign-in methods**. Removing someone's last way in (their only linked account when
+they have no password or passkey) is refused.
+
+## A tenant's own provider
+
+A tenant can connect its own identity provider, so its people sign in the way their company already does.
+
+<Steps>
+  <Step title="Add the provider">
+    On the tenant's **Company sign-in** tab, add an OpenID Connect provider with a name, its issuer, client ID and secret. Turn on
+    **creates accounts** (just-in-time) to give an account to people who don't have one yet; they join the tenant on their first sign-in.
+  </Step>
+  <Step title="Prove a domain">
+    Add the email domain (`acme.com`) and publish the TXT record the console shows:
+
+    ```text
+    _hayat-challenge.acme.com  TXT  "hayat-verify=…"
+    ```
+
+    Until the record is found, the domain does nothing. A domain can belong to one tenant only, and free mail domains such as
+    `gmail.com` can't be claimed.
+  </Step>
+  <Step title="Choose the policy">
+    Pick the provider people at the domain sign in with, and whether company sign-in is **offered** beside the password or **enforced**.
+  </Step>
+</Steps>
+
+With **enforce**, no password works for addresses at that domain: Hayat refuses it at sign-in, sign-up and password reset, on the server.
+Instance admins keep their password, so a broken identity provider can't lock out the person who fixes it.
+
+People who sign in through their company's own provider follow its rules for a second factor, so Hayat doesn't ask for one of its own.
+See [Two-step verification](/docs/two-step-verification).

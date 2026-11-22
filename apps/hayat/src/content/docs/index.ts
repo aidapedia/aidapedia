@@ -10,8 +10,8 @@ export const DOCS = createDocs({
   order: [
     ['Getting started', ['getting-started/introduction', 'getting-started/quick-start', 'getting-started/concepts']],
     ['Deploy', ['deploy/docker-compose', 'deploy/roles', 'deploy/production', 'deploy/upgrading']],
-    ['Configure', ['configure/configuration', 'configure/database', 'configure/email']],
-    ['Integrate', ['integrate/connect-an-app', 'integrate/services', 'integrate/contracts', 'integrate/sdks', 'integrate/import']],
+    ['Configure', ['configure/configuration', 'configure/database', 'configure/email', 'configure/storage', 'configure/sign-in-methods', 'configure/two-step-verification']],
+    ['Integrate', ['integrate/connect-an-app', 'integrate/services', 'integrate/contracts', 'integrate/sdks', 'integrate/login-pages', 'integrate/agents', 'integrate/import']],
     ['Reference', ['reference/access-model', 'reference/service-api', 'reference/cli', 'reference/security', 'reference/troubleshooting']],
   ],
   repoDir: 'https://github.com/aidapedia/aidapedia/blob/HEAD/apps/hayat/src/content/docs',

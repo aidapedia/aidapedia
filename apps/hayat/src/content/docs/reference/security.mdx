@@ -1,7 +1,7 @@
 ---
 title: Security
 description: "How Hayat keeps keys, passwords, tokens and sessions, and the limits it puts on sign-in."
-keywords: security argon2id password master key aes-256-gcm es256 signing keys rotation refresh token reuse session rate limit csrf audit
+keywords: security argon2id password master key aes-256-gcm es256 signing keys rotation refresh token reuse session rate limit csrf audit lockout breached hibp turnstile passkey two-step step-up idle timeout
 ---
 
 import { SUPPORT_EMAIL } from '@shared/content/company'
@@ -16,16 +16,38 @@ import { SUPPORT_EMAIL } from '@shared/content/company'
 ## Passwords
 
 - Hashed with **argon2id**. A hash imported in an older form is replaced with argon2id at that person's next sign-in.
-- At least **10 characters**.
+- At least **10 characters**, and checked against **Have I Been Pwned** without sending the password: only the first five hex characters
+  of its SHA-1 leave the server (`HAYAT_BREACHED_PASSWORDS`). A failed lookup lets the password through.
+- **Ten wrong passwords in a row** pause the password for 15 minutes and email the owner. The refusal reads like the rate limit, so it
+  reveals nothing, and a password reset lifts it.
 - A new account is **pending** until its mailbox answers: the password is chosen from the emailed link, so nobody can sign in with an
   address they don't read.
-- Sign-up and password reset never reveal whether an address already has an account.
+- Sign-up and password reset never reveal whether an address already has an account. Cloudflare Turnstile can guard both pages
+  (`HAYAT_TURNSTILE_*`).
+
+## Second factors
+
+- A password, a reset link or Google/GitHub is one factor. Someone with an authenticator app or a passkey is asked for it next, and a
+  tenant can require one of every member. See [Two-step verification](/docs/two-step-verification).
+- A **passkey** is bound to the issuer's host name. An authenticator app's secret is encrypted under the master key and never passes
+  through the console.
+- People who sign in through their company's own identity provider follow its rules instead.
+
+## Sign-in with other accounts
+
+- Google, GitHub and company SSO end in an ordinary Hayat session; services never talk to those providers.
+- Only an address the provider verified is matched to an account, and never an instance admin's. A tenant's own provider signs in only
+  addresses at domains it proved with a DNS record. See [Sign-in methods](/docs/sign-in-methods).
+- Every trip uses PKCE and a single-use state bound to the browser.
+- A domain set to company sign-in only refuses the password on the server. Instance admins keep theirs.
 
 ## Sessions and tokens
 
 - One **session** per sign-in at Hayat, kept in a cookie on the issuer's origin, `Secure` when the issuer is https. It gives single
   sign-on across every app.
 - **Disabling** an account or **resetting** its password ends every one of its sessions.
+- A session can also end after a time unused (`HAYAT_SESSION_IDLE_TIMEOUT`), and single sign-on refuses a session weaker than the
+  account now needs.
 - **Access tokens** carry who someone is (`sub`, `sid`) and never what they may do. Services verify them offline and ask for every
   decision, so a revoked grant takes effect at once.
 - **Refresh tokens** rotate on every use. Presenting one that was already used revokes its whole family, and a refresh token dies with
@@ -47,12 +69,29 @@ Counted in Redis when `HAYAT_REDIS_URL` is set, otherwise in each process's memo
 - The **last instance admin** can't be demoted or disabled, so an instance is never left without one.
 - Instance admins hold Hayat's own permissions, never a service's: administering the instance is not reading its data.
 - Every admin change writes an **audit** row (who changed what) in the same transaction as the change.
+- **Sensitive changes step up.** Removing a factor, making new recovery codes, unlinking an account, promoting or disabling someone,
+  rotating keys and secrets, and deleting or handing over a tenant ask the person to confirm it's them, at Hayat, if they haven't
+  in the last ten minutes.
+
+## Uploaded images
+
+- Every picture and logo is decoded, size-capped, resized and re-encoded, so EXIF and anything that isn't pixels is dropped.
+- Hayat serves them itself at `<issuer>/media/<id>`, never from a bucket URL, so the sign-in pages load only from their own origin.
+- A login page's logo is PNG, JPEG or WebP, never SVG, which could run script on the sign-in origin.
+
+## Agents
+
+- An [agent](/docs/agents) never signs in, and holds nothing outside its tenant or while it or its sponsor isn't active.
+- It is never an owner, isn't reached by a grant to the whole tenant, and never holds Hayat's own or a `people_only` permission.
+- A service gets an agent's token, for an hour, only for an agent that works in it.
 
 ## Services
 
 - A service authenticates with its own client credentials and may write only nodes of its own namespace.
 - A contract version that files types under another service's types waits for that service's owners to approve it.
 - A service token is refused where a person's token is expected.
+- An enrollment code is single use, expires within 7 days at most, and is revoked when another is made for the same service.
+  Re-enrolling rotates the service's API secret, and the old one stops working at once.
 
 ## Reporting a vulnerability
 

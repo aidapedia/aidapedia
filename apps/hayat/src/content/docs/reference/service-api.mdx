@@ -1,14 +1,31 @@
 ---
 title: Service API
 description: "Every RPC your services can call on the api role, over gRPC, gRPC-Web or Connect."
-keywords: grpc connect api rpc Check BatchCheck PermissionsAt LookupResources LookupSubjects UpsertResource DeleteResource GetUser ListUserTenants ListTenantMembers ListTenantGrants GetUserAppearance Watch PublishContract proto
+keywords: grpc connect api rpc Check BatchCheck PermissionsAt LookupResources LookupSubjects UpsertResource DeleteResource GetUser ListUserTenants ListTenantMembers ListTenantGrants GetUserAppearance Watch PublishContract GetAgent ListTenantAgents IssueAgentToken InspectEnrollment Enroll GetServerInfo ServerInfoService proto version since compatibility breaking
 ---
 
 The service API is served by the `api` role on port `7443`, as gRPC (h2c), gRPC-Web and Connect on the same port. Its definition is
 `proto/hayat/authz/v1/authz.proto` in the Hayat repo, with generated code for Go and TypeScript in `gen/`.
 
 Every call carries a bearer token from the client-credentials grant, issued to the API credential of a registered service. A service may
-ask about any person, since it is trusted to ask on their behalf, but writes only nodes of its own namespace.
+ask about any person, since it is trusted to ask on their behalf, but writes only nodes of its own namespace. There are two exceptions:
+`EnrollmentService`, where the enrollment code is the credential, and `ServerInfoService`, which says which Hayat release this is.
+
+<H2 id="versioning">Versioning</H2>
+
+The service API only grows. A release adds services, RPCs and fields. It never removes, renames or renumbers one: CI runs
+`buf breaking` against the last release. So a newer Hayat serves every older service.
+
+Each RPC in `authz.proto` has a `// Since X.Y.Z.` line naming the release it first shipped in. A service's minimum Hayat is the newest
+of those among the RPCs it calls, and never lower than 1.2.0, the first release that reports its version. The [SDKs](/docs/sdks#minimum-version)
+require that minimum and check it when a client is created. The RPCs newer than 1.0.0:
+
+| Since | RPCs |
+| --- | --- |
+| 1.1.0 | `ListTenantGrants`, `GetUserAppearance` |
+| 1.2.0 | `GetAgent`, `ListTenantAgents`, `IssueAgentToken`, `InspectEnrollment`, `Enroll`, `GetServerInfo` |
+
+Every release note lists the RPCs it adds under **Service API**.
 
 ## Naming a node
 
@@ -26,7 +43,10 @@ writes), and `fully_consistent` bypasses every cache, for destructive actions.
 | `BatchCheck` | Several checks in one call, in the order asked. One that can't be answered (an unknown resource) is `allowed: false`. |
 | `PermissionsAt` | Everything a person may do at one node. For drawing a page's buttons. |
 | `LookupResources` | Nodes of one type where a person holds a permission, optionally in one tenant, paged. For lists. |
-| `LookupSubjects` | Who really holds a permission at a node, through every route, each with a reason. |
+| `LookupSubjects` | Who really holds a permission at a node, through every route, each with a reason. Agents are listed with `agent_id`. |
+
+`Check`, `BatchCheck`, `PermissionsAt` and `LookupResources` take `agent_id` in place of `user_id` to ask about an
+[agent](/docs/agents).
 
 ## TreeService: your nodes
 
@@ -43,10 +63,10 @@ Writes answer with the tenant and the revision they produced, which the SDKs use
 | RPC | Answers |
 | --- | --- |
 | `GetUser`, `BatchGetUsers` | Profiles by id. Unknown ids are left out. |
-| `ListUserTenants` | The tenants a person belongs to, by name. For a tenant switcher. |
+| `ListUserTenants` | The tenants a person belongs to, by name, with each tenant's logo. For a tenant switcher. |
 | `ListTenantMembers` | A tenant's roster with each person's profile. Belonging, not permission. |
 | `ListTenantGrants` | What each member was given in a tenant: grants to them, to a group they're on, or to the whole tenant, and the nodes they own. Only the tenant, its groups and your own resource types are listed. |
-| `GetUserAppearance` | A person's theme. Apply it to their session, and don't keep a copy. |
+| `GetUserAppearance` | The theme a person uses in your service: the one they gave it of its own (`own: true`), or else their account's. Apply it to their session, and don't keep a copy. |
 
 ## WatchService: changes
 
@@ -54,11 +74,40 @@ Writes answer with the tenant and the revision they produced, which the SDKs use
 | --- | --- |
 | `Watch` | Streams every policy change from a cursor (the id of the last event you processed; empty starts from now). Each event names a tenant, or the zero tenant `00000000-0000-0000-0000-000000000000` for a global change. Drop cached answers for it. |
 
+## AgentService: agents
+
+| RPC | Does |
+| --- | --- |
+| `GetAgent` | Reads one agent that works in your service. |
+| `ListTenantAgents` | A tenant's agents that work in your service. |
+| `IssueAgentToken` | A token to act as an agent (`sub: agent:<id>`, `aud` your service), valid for an hour. Refused unless the agent and its sponsor are active and the agent works in your service. |
+
+See [Agents](/docs/agents).
+
 ## SchemaService: contracts
 
 | RPC | Does |
 | --- | --- |
 | `PublishContract` | Publishes a new version of your contract (YAML or JSON) and answers with its version, status and the other namespaces it waits on. See the [contract reference](/docs/contracts). |
+
+## EnrollmentService: setting a service up
+
+Takes no access token: the enrollment code is the credential.
+
+| RPC | Does |
+| --- | --- |
+| `InspectEnrollment` | What a code would do, without spending it: the service, whether it registers or rotates, who made it and until when. |
+| `Enroll` | Redeems a code once. Registers the service (or rotates its API secret), optionally publishes its contract, makes a sign-in client for its address and grants an admin role, and answers with its credentials. |
+
+See [Enroll with a code](/docs/services#enroll-with-a-code).
+
+## ServerInfoService: which Hayat this is
+
+Takes no access token, so a service can check before it enrolls.
+
+| RPC | Answers |
+| --- | --- |
+| `GetServerInfo` | `version`: the release this Hayat was built from, without the leading v (`1.2.0`), or `dev` for a build from source. A Hayat without this service is older than 1.2.0: Connect answers `unimplemented`, or a plain 404. |
 
 ## Calling it without an SDK
 
@@ -72,4 +121,12 @@ TOKEN=$(curl -s -u "$HAYAT_CLIENT_ID:$HAYAT_CLIENT_SECRET" -d grant_type=client_
 curl -s http://hayat-api:7443/hayat.authz.v1.AuthzService/Check \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"userId":"…","permission":"billing.ledger.view","resource":{"type":"billing/ledger","externalId":"42"},"explain":true}'
+```
+
+Without an SDK, do the version check yourself: call `GetServerInfo` at startup and before enrolling, and refuse a Hayat older than your
+minimum.
+
+```bash
+curl -s http://hayat-api:7443/hayat.authz.v1.ServerInfoService/GetServerInfo -H 'Content-Type: application/json' -d '{}'
+# {"version":"1.2.0"}
 ```

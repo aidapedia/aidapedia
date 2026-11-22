@@ -1,7 +1,7 @@
 ---
 title: Configuration
 description: "Every environment variable Hayat reads, its default, and what it does."
-keywords: env environment variables HAYAT_MASTER_KEY HAYAT_ISSUER HAYAT_DATABASE_URL HAYAT_DEV HAYAT_REDIS_URL HAYAT_SMTP_URL ttl lifetime port
+keywords: env environment variables HAYAT_MASTER_KEY HAYAT_ISSUER HAYAT_DATABASE_URL HAYAT_DEV HAYAT_REDIS_URL HAYAT_SMTP_URL HAYAT_SESSION_IDLE_TIMEOUT HAYAT_BREACHED_PASSWORDS HAYAT_TURNSTILE_SITE_KEY HAYAT_STORAGE HAYAT_S3_BUCKET ttl lifetime port
 ---
 
 import { DEV, OPT, PROD, REQ } from '@/components/docs/badges'
@@ -81,6 +81,10 @@ Each is a Go duration: `90m`, `12h`, `720h`. There is no day unit, so 14 days is
     How long a sign-in at Hayat lasts (14 days). While it does, signing in to another app takes no password: that is the single
     sign-on. Disabling an account or resetting its password ends its sessions at once.
   </Param>
+  <Param name="HAYAT_SESSION_IDLE_TIMEOUT" badges={[OPT]} def="0">
+    Ends a session nobody has used for this long, whatever is left of `HAYAT_SESSION_TTL`. A page on Hayat, a token refresh and a console
+    call each count as use. `0` turns it off; otherwise it must be at least `15m`.
+  </Param>
   <Param name="HAYAT_ACCESS_TOKEN_TTL" badges={[OPT]} def="10m">
     How long an access token is valid. Services verify them offline, so this is also the longest a token outlives a revoked session.
   </Param>
@@ -90,6 +94,36 @@ Each is a Go duration: `90m`, `12h`, `720h`. There is no day unit, so 14 days is
   <Param name="HAYAT_KEY_ROTATION" badges={[OPT]} def="2160h">
     How often the `worker` rotates the signing keys (90 days). `hayat rotate-keys` rotates them now; the previous key stays published
     for 48 hours so tokens it signed still verify.
+  </Param>
+</Params>
+
+## Account security
+
+<Params>
+  <Param name="HAYAT_BREACHED_PASSWORDS" badges={[OPT]} def="hibp">
+    `hibp` checks every new password against Have I Been Pwned's range API: only the first five hex characters of its SHA-1 leave the
+    server. A failed lookup lets the password through. `off` turns it off.
+  </Param>
+  <Param name="HAYAT_TURNSTILE_SITE_KEY" badges={[OPT]}>
+    With `HAYAT_TURNSTILE_SECRET_KEY`, puts Cloudflare Turnstile on the sign-up and forgot-password pages. Set both or neither. It is the
+    only thing those pages then load from another origin, so it is off unless you set it.
+  </Param>
+  <Param name="HAYAT_TURNSTILE_SECRET_KEY" badges={[OPT]}>The secret half of the Turnstile pair.</Param>
+</Params>
+
+Second factors and company SSO are set up in the console, not here: see [Two-step verification](/docs/two-step-verification) and
+[Sign-in methods](/docs/sign-in-methods).
+
+## Uploaded images
+
+<Params>
+  <Param name="HAYAT_STORAGE" badges={[OPT]} def="local">
+    Where people's pictures and logos are kept: `local` (a directory the `auth` and `admin` roles both mount) or `s3`. Never the database.
+  </Param>
+  <Param name="HAYAT_STORAGE_DIR" badges={[OPT]} def="/var/lib/hayat/media">The directory, with `local`.</Param>
+  <Param name="HAYAT_S3_BUCKET" badges={[OPT]}>
+    With `s3`, the bucket, alongside `HAYAT_S3_ACCESS_KEY_ID`, `HAYAT_S3_SECRET_ACCESS_KEY`, `HAYAT_S3_ENDPOINT`, `HAYAT_S3_REGION`,
+    `HAYAT_S3_PREFIX` and `HAYAT_S3_PATH_STYLE`. See [Image storage](/docs/storage).
   </Param>
 </Params>
 

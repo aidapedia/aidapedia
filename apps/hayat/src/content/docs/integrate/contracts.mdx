@@ -1,7 +1,7 @@
 ---
 title: Contract reference
 description: "Every field of a service's contract, the names it accepts, and the rules a new version must follow."
-keywords: contract manifest yaml resource_types permissions default_roles parents access via_placement requires_membership scope applies_to version approve pending
+keywords: contract manifest yaml resource_types permissions default_roles parents access via_placement requires_membership scope applies_to people_only version approve pending
 ---
 
 A contract is a YAML (or JSON) manifest. It is how a service joins the catalog: the resource types it files in the tree, the permissions
@@ -81,6 +81,10 @@ default_roles:
     Optional. The short name admins read on the Roles pages ("View ledgers"). Without one they see the key.
   </Param>
   <Param name="description">Optional. One line on what it lets someone do.</Param>
+  <Param name="people_only">
+    Optional. When true, [agents](/docs/agents) never hold it, and a role with it can't be granted to one. Use it for what only a person
+    should do, such as approving or administering. A later version may turn it on, never off.
+  </Param>
 </Params>
 
 ## default_roles
@@ -100,7 +104,7 @@ Roles the service suggests. Admins see them in the console beside Hayat's own an
 ## Rules for a new version
 
 - **Additive only.** A new version may add types, parents, permissions, roles and permissions to roles. It may never remove or change
-  them. Labels and descriptions are display text, so they may change.
+  them. Labels and descriptions are display text, so they may change, and `people_only` may be turned on but never off.
 - **Live when published,** with one exception: a version that files one of your types under another service's types is **pending**
   until an owner of each such namespace approves it on their service's page. Your own namespace never needs an approval, since only
   its owners, or the service itself, can publish for it.

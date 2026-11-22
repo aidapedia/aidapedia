@@ -1,0 +1,55 @@
+---
+title: Image storage
+description: "Where people's pictures and the logos of tenants, services and login pages are kept: a shared volume or an S3-compatible bucket."
+keywords: storage media images avatar picture logo upload s3 r2 minio bucket volume HAYAT_STORAGE HAYAT_STORAGE_DIR HAYAT_S3 backup
+---
+
+People upload their own picture at **Account**, a tenant's admins its logo, and a service's owners theirs and their login page's. Hayat
+checks each image, resizes it and re-encodes it, which drops EXIF and anything else that isn't pixels, and serves it itself at
+`<issuer>/media/<id>`.
+
+Images are **never kept in the database**. `HAYAT_STORAGE` picks where the files live.
+
+| `HAYAT_STORAGE` | Where | Set also |
+| --- | --- | --- |
+| `local` (default) | A directory, `/var/lib/hayat/media` unless `HAYAT_STORAGE_DIR` says otherwise | `HAYAT_STORAGE_DIR` |
+| `s3` | Any S3-compatible bucket: AWS S3, Cloudflare R2, MinIO | `HAYAT_S3_BUCKET`, `HAYAT_S3_ACCESS_KEY_ID`, `HAYAT_S3_SECRET_ACCESS_KEY`, and the others below as needed |
+
+## On a volume
+
+The `admin` role writes the files and the `auth` role serves them, so both must mount the same directory. The compose file does this
+with one `media` volume every role mounts. In Kubernetes, use a ReadWriteMany volume. Hayat runs as uid `65532`, which must be able to
+write there.
+
+## In a bucket
+
+Nothing is shared between pods. The bucket can stay private: browsers only ever load images from Hayat, never from a bucket URL, so the
+sign-in pages load nothing from another origin.
+
+```dotenv title=".env"
+HAYAT_STORAGE=s3
+HAYAT_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+HAYAT_S3_REGION=auto
+HAYAT_S3_BUCKET=hayat
+HAYAT_S3_ACCESS_KEY_ID=…
+HAYAT_S3_SECRET_ACCESS_KEY=…
+```
+
+<Params>
+  <Param name="HAYAT_S3_ENDPOINT" def="https://s3.amazonaws.com">The store's address, such as `http://minio:9000`.</Param>
+  <Param name="HAYAT_S3_REGION" def="us-east-1">The bucket's region.</Param>
+  <Param name="HAYAT_S3_PREFIX" def="hayat/">A key prefix inside the bucket.</Param>
+  <Param name="HAYAT_S3_PATH_STYLE" def="false">
+    `true` addresses the bucket as `<endpoint>/<bucket>/…` instead of `<bucket>.<endpoint>/…`. MinIO and most self-hosted stores need it.
+  </Param>
+</Params>
+
+## At start-up
+
+The `auth` and `admin` roles check the store when they start, and refuse to start if they can't write to it. The `api` and `worker`
+roles never touch it.
+
+## Backups
+
+Back the volume (or bucket) up together with the database: a restored database points at images by id. An image never changes once
+stored. A new upload gets a new id, and the image it replaced is deleted.

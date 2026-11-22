@@ -1,7 +1,7 @@
 ---
 title: Upgrading
 description: "Pull a new image, migrate once, restart the roles."
-keywords: upgrade update migrate status version release pull rollback HAYAT_VERSION
+keywords: upgrade update migrate status version release pull rollback HAYAT_VERSION compatibility minimum services
 ---
 
 A new release is a new image. Upgrading is three steps: pull it, apply its migrations once, and restart the roles on it.
@@ -54,5 +54,9 @@ and start the previous image on it.
 
 ## What changes for your services
 
-Nothing you published moves: contracts, mirrored resources, clients and grants are data, and an upgrade keeps them. Update the
-[SDK](/docs/sdks) when you want what a release adds.
+Nothing you published moves: contracts, mirrored resources, clients and grants are data, and an upgrade keeps them. The service API
+only grows, so every service keeps working on the newer Hayat. Update the [SDK](/docs/sdks) when you want what a release adds.
+
+Each service declares the oldest Hayat it works with ([Which Hayat you need](/docs/sdks#minimum-version)), and refuses to start on an
+older one. When a service's new release needs a newer Hayat, upgrade Hayat first, then the service. `hayat version` prints what you
+run.

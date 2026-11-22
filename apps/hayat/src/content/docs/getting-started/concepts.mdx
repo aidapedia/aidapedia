@@ -42,6 +42,12 @@ team filed.
 Rosters themselves stay flat: a group lists only the people put on it directly. The console shows the rest as "via Payment". A team
 lead isn't a column on the roster; it's a role granted on the team's node.
 
+## Agents
+
+An **agent** is a member that isn't a person: an automation or an assistant that holds roles and works in services but never signs in.
+Each lives in one tenant and answers to a **sponsor** on its roster; if the sponsor leaves, it pauses. It holds less than a person could:
+never ownership, never a grant made to the whole tenant, and never a permission only people may hold. See [Agents](/docs/agents).
+
 ## Resources
 
 A **resource** is one of your service's things (a ledger, a database connection, a report) mirrored into the tree as a node. Your
@@ -60,7 +66,7 @@ more in the console, starting from a copy of an existing one.
 
 | Built-in role | Granted on | Lets someone |
 | --- | --- | --- |
-| Tenant admin (`hayat.tenant-admin`) | the root or a tenant | Run a tenant: its settings, members, groups, and who may do what in it |
+| Tenant admin (`hayat.tenant-admin`) | the root or a tenant | Run a tenant: its settings, members, groups, agents, and who may do what in it |
 | Group manager (`hayat.group-manager`) | a group | Run one group: its members, what is filed in it, and grants inside it |
 | Service owner (`hayat.service-owner`) | a service | Approve contracts that touch its namespace, name its other owners, rotate its API secret |
 
