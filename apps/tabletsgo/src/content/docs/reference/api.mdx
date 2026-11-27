@@ -35,7 +35,8 @@ The access token lasts 15 minutes. A script can sign in again when it gets a 401
 
 <H3 id="enterprise-token">Enterprise</H3>
 
-Use a token Hayat issued to Tabletsgo's sign-in client, from your OIDC library.
+Use a token Hayat issued to Tabletsgo's sign-in client, from your OIDC library. While Hayat can't be reached, calls answer `503`
+with `"code": "identity_unavailable"`: the token is fine, so keep it and retry.
 
 <H2 id="sign-in-routes">Solo sign-in routes</H2>
 

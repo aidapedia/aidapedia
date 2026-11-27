@@ -1,7 +1,7 @@
 ---
 title: Solo to enterprise
 description: "Move a solo instance to enterprise mode with its connections, workspace and settings."
-keywords: migrate upgrade team hayat bundle import remap enroll
+keywords: migrate upgrade team hayat bundle import remap enroll docker-compose.hayat.yml connections:assign no workspace
 ---
 
 A solo instance moves to enterprise mode with everything in it: connections, storage, SSH hosts and keys, dashboards, workflows, the
@@ -9,7 +9,7 @@ workspace and its settings. You keep your id, so you keep owning all of it.
 
 <Steps>
   <Step title="Deploy Hayat">
-    Use [Hayat's compose file](/docs/enterprise#deploy-hayat), or a Hayat you already run.
+    Use [the bundled setup](/docs/enterprise#bundled), [Hayat's compose file](/docs/enterprise#deploy-hayat), or a Hayat you already run.
   </Step>
   <Step title="Write the import bundle">
     ```bash
@@ -23,6 +23,12 @@ workspace and its settings. You keep your id, so you keep owning all of it.
     ```bash
     hayat import --file hayat-import.json --out hayat-result.json
     ```
+
+    With the bundled Hayat, pipe it straight from one container to the other:
+
+    ```bash
+    dc exec -T tabletsgo cat /app/data/hayat-import.json | dc exec -T hayat hayat import --file /dev/stdin --app-url http://localhost:3000
+    ```
   </Step>
   <Step title="Restart in enterprise mode">
     Add `TABLETSGO_MODE=enterprise`, `HAYAT_ISSUER`, `HAYAT_API_URL` and `ENCRYPTION_KEY` to your settings. If solo generated the key,
@@ -33,7 +39,8 @@ workspace and its settings. You keep your id, so you keep owning all of it.
     ```
 
     Then start again. With the repo's files:
-    `docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d`. The log shows `🔁 Mode: solo → enterprise`.
+    `docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d` (or `docker-compose.hayat.yml` for the bundled Hayat,
+    which sets the mode and Hayat's addresses itself). The log shows `🔁 Mode: solo → enterprise`.
   </Step>
   <Step title="Enroll and sign in">
     Open Tabletsgo and paste an enrollment code, as in [Enterprise mode](/docs/enterprise#set-up). Then sign up at Hayat with the
@@ -53,6 +60,17 @@ workspace and its settings. You keep your id, so you keep owning all of it.
 </Callout>
 
 Your password doesn't move: you choose one when you sign up at Hayat.
+
+<H2 id="no-workspace">Connections from before workspaces</H2>
+
+A connection created before workspaces existed belongs to none, and nobody may open it. The move files each one under its owner's
+oldest workspace. If the log still says `⚠️ N connection(s) belong to no workspace`, file them under one yourself:
+
+```bash
+docker compose exec tabletsgo npm run connections:assign -- --workspace <workspace id>
+```
+
+Then grant access to them in Hayat's console as usual.
 
 ## Going back
 

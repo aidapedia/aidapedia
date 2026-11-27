@@ -34,10 +34,11 @@ Until it has an owner, every start prints a six-word setup code:
 
 ```bash
 docker logs tabletsgo
-# 🔑 Solo setup: open http://localhost:3000 and enter this code: amber-orbit-river-stone-maple-otter
+# 🔑 Solo setup: open http://localhost:3000 and enter this code: amber-orbit-river-stone-maple-otter — or open http://localhost:3000/#setup=amber-orbit-river-stone-maple-otter
 ```
 
-Open the address, enter the code, your name, email and a password of at least 8 characters. Only someone who can read the server's
+Open the link, which fills the code in, or open the address and enter the code. Then add your name, email and a password of at
+least 8 characters. The code rides in the link's `#` part, which browsers never send to the server. Only someone who can read the server's
 log can claim the instance, even if its port is open to others.
 
 ## Encryption key

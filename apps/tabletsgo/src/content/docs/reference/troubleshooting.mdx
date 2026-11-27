@@ -1,7 +1,7 @@
 ---
 title: Troubleshooting
 description: "What each start-up and sign-in error means, and what to do about it."
-keywords: error fails refuses ENCRYPTION_KEY not set hayat not configured setup code wrong too many attempts
+keywords: error fails refuses ENCRYPTION_KEY not set hayat not configured setup code wrong too many attempts no workspace connections:assign identity_unavailable 503
 ---
 
 {/* Each problem is an H3 titled with the message itself, with a short id that links can rely on. */}
@@ -34,6 +34,11 @@ Hayat, or [start a new solo instance](/docs/modes#changing-mode).
 A v1.0 instance with several accounts is starting in solo mode. Nothing has changed yet. Run it in enterprise mode, or set
 `SOLO_OWNER` to the email of the account that keeps it ([Upgrading](/docs/upgrading#v1-to-solo)).
 
+<H3 id="no-workspace">N connection(s) belong to no workspace, so nobody can open them</H3>
+
+A warning, not an error. These connections are from before workspaces existed, and the move to Hayat couldn't file them. File them
+under a workspace with `npm run connections:assign -- --workspace <id>` in the container ([Solo to enterprise](/docs/solo-to-enterprise#no-workspace)).
+
 <H3 id="migration-failed">Couldn’t start: prisma migrate deploy failed</H3>
 
 A schema migration failed and the store was left as it was. The snapshot taken before it is in `/app/data/backups/`. Keep the log
@@ -53,6 +58,12 @@ Five failed attempts from your address in the last minute. Wait, then sign in. I
 
 Someone has claimed it. If that wasn't you, the instance was reachable before you set it up: reset the password from the server
 ([Forgotten password](/docs/solo#forgotten-password)) and check who else can reach the port.
+
+<H3 id="identity-unavailable">Can't reach the identity service (Hayat)</H3>
+
+Enterprise mode. Tabletsgo can't reach Hayat, so the API answers `503` and lets nobody in. Your session is kept and the console retries
+on its own. If it lasts, check that Hayat is running and that Tabletsgo can reach `HAYAT_API_URL` and `HAYAT_AUTH_URL`
+([Wiring](/docs/enterprise#wiring)).
 
 <H3 id="signing-in-isnt-set-up">Signing in isn’t set up</H3>
 

@@ -1,7 +1,7 @@
 ---
 title: Security
 description: "What is encrypted, how people sign in, and how sessions end."
-keywords: encryption aes scrypt tokens cookie rate limit
+keywords: encryption aes scrypt tokens cookie rate limit workflows.manage fail closed
 ---
 
 import { SUPPORT_EMAIL } from '@shared/content/company'
@@ -22,7 +22,8 @@ one is set.
 
 <H2 id="solo">Solo sign-in</H2>
 
-- **Claiming the instance** takes the setup code from the server's log, compared in constant time.
+- **Claiming the instance** takes the setup code from the server's log, compared in constant time. The link printed beside it
+  carries the code after `#`, which browsers never send, so it stays out of proxy and access logs.
 - **Passwords** are hashed with scrypt and a random salt. A v1.0 account's old hash is replaced at its first sign-in.
 - **Sessions** are signed tokens: a 15-minute access token kept in the page's memory, and a 30-day refresh token in an `HttpOnly`,
   `SameSite=Strict` cookie scoped to the sign-in routes and refused from other origins.
@@ -37,7 +38,11 @@ one is set.
   client.
 - Every action asks Hayat for a permission. Answers are cached for a few seconds and dropped the moment Hayat reports a change, so a
   revoked grant takes effect at once.
-- If Hayat can't be reached, nobody is let in.
+- A connection that belongs to no workspace has no place in Hayat, so nobody may open it, not even its owner.
+- Changing a saved workflow takes `workflows.manage` at its connection (or owning the connection). A workflow runs on its schedule
+  or webhook with the connection's credentials, long after whoever wrote it, so opening a connection only lets you run its workflows.
+- If Hayat can't be reached, nobody is let in. The API answers `503`, not `401`, so people stay signed in and carry on once it is back.
+  Tabletsgo never uses an old answer in the meantime: that could let a revoked grant through.
 
 ## The server
 

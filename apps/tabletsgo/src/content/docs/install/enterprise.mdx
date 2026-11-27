@@ -1,7 +1,7 @@
 ---
 title: Enterprise mode
-description: "Run Tabletsgo for a team on Hayat: set two addresses, start it, paste an enrollment code."
-keywords: hayat team roles permissions sso oidc enroll enrollment code hye_ HAYAT_ISSUER HAYAT_API_URL HAYAT_AUTH_URL docker network
+description: "Run Tabletsgo for a team on Hayat: bundled on one machine, or wired to a Hayat you already run."
+keywords: hayat team roles permissions sso oidc enroll enrollment code hye_ HAYAT_ISSUER HAYAT_API_URL HAYAT_AUTH_URL docker network docker-compose.hayat.yml bundled workflows.manage identity_unavailable
 ---
 
 In enterprise mode, people sign in at [Hayat](https://github.com/aidapedia/hayat) with one account across your apps. Hayat holds the
@@ -9,10 +9,29 @@ people, the workspaces (Hayat calls them tenants), the roles and the grants. Tab
 
 Moving a solo instance? See [Solo to enterprise](/docs/solo-to-enterprise). Upgrading v1.0? See [Upgrading](/docs/upgrading#v1-to-enterprise).
 
+<H2 id="bundled">One machine: Hayat bundled</H2>
+
+The repo's `docker-compose.hayat.yml` runs Hayat beside Tabletsgo, with its own Postgres, Redis and console. Nothing else to deploy.
+
+```bash
+echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
+echo "HAYAT_MASTER_KEY=$(openssl rand -base64 32)" >> .env
+alias dc='docker compose -f docker-compose.yml -f docker-compose.hayat.yml'
+dc up -d
+dc logs hayat | grep setup     # open the link: create Hayat's first admin
+dc exec hayat hayat enrollment-code --service tabletsgo --name Tabletsgo
+```
+
+Open **http://localhost:3000** and paste the code: you become Tabletsgo's admin. Manage people and roles in Hayat's console at
+**http://localhost:3001**; Hayat's mail lands in Mailpit at **http://localhost:8025** until you set `HAYAT_SMTP_URL`. Behind https, set
+`HAYAT_ISSUER` and `HAYAT_CONSOLE_URL` to their public addresses and `HAYAT_DEV=false`.
+
+Hayat runs every role in one container here. For high availability, run Hayat on its own and follow the steps below.
+
 ## What you need
 
 - **Docker** on the Tabletsgo server.
-- **Hayat 1.2.0 or newer.** No Hayat yet? [Deploy one](#deploy-hayat) first.
+- **Hayat 1.2.0 or newer.** No Hayat yet? Use the [bundled setup](#bundled), or [deploy one](#deploy-hayat) first.
 - **Tabletsgo's address**, such as `https://db.acme.com`. People come back here after signing in.
 
 <H2 id="set-up">Set up</H2>
@@ -82,8 +101,12 @@ People, rosters and grants are managed in Hayat's console. Tabletsgo shows them 
 | --------------------------- | -------------------------------------------------------------------- |
 | Tabletsgo admin             | The admin area: modules, mail, updates. No access to workspace data. |
 | Workspace owner (tabletsgo) | The workspace: config, storage, SSH hosts and every connection.      |
-| Connection manager          | Edit, export and open the connections where it is granted.           |
+| Connection manager          | Edit, export and open the connections where it is granted, and change their workflows. |
 | Connection user             | Open the connections where it is granted.                            |
+
+Changing a connection's saved workflows takes **Manage workflows** (`workflows.manage`): the connection's owner, a Connection manager
+or a Workspace owner. A saved workflow runs on its schedule or webhook with the connection's credentials, so a Connection user can
+open and run workflows but not change them.
 
 A connection's **Access** tab shows who can open it and why. Enrolling with a Hayat you already run only adds the `tabletsgo`
 service and its roles; your other apps, people and tenants stay as they are.
@@ -118,5 +141,7 @@ This Tabletsgo needs Hayat 1.2.0 or newer. Enrolling refuses an older Hayat, eve
 - **Signed in, then sent back to sign in.** `HAYAT_ISSUER` must match Hayat's exactly, scheme and port included.
 
 <Callout kind="note" title="Hayat must be reachable">
-  If Hayat is down, nobody can sign in until it is back. Tabletsgo never lets people in without it.
+  If Hayat is down, Tabletsgo lets nobody in until it is back: the API answers `503` with `identity_unavailable`. People already
+  signed in stay signed in and see **Can't reach the identity service (Hayat)**. The console retries on its own and carries on, with
+  their tabs, once Hayat answers.
 </Callout>
