@@ -26,10 +26,9 @@ To stay on one release, use a version tag instead of `latest`, as in `ghcr.io/ai
 
 <H2 id="hayat-first">In enterprise mode: Hayat first</H2>
 
-Each Tabletsgo release needs a minimum Hayat version. Today that is 1.2.0. When a release raises it, its release notes say
-*Requires Hayat ≥ X*. Upgrade Hayat first, then Tabletsgo. Hayat's service API only grows, so the Tabletsgo you run now keeps
-working on the newer Hayat. Upgrading in the other order leaves Tabletsgo logging a `⛔` line at every start, and it refuses to
-enroll until Hayat catches up. **Administration → Hayat** shows which Hayat version answers.
+Each release needs a minimum Hayat, 1.2.0 today; release notes say *Requires Hayat ≥ X* when it rises. Upgrade Hayat first, then
+Tabletsgo: Hayat's API only grows, so the Tabletsgo you run keeps working. In the other order Tabletsgo logs `⛔` at every start and
+refuses to enroll. **Administration → Hayat** shows the version that answers.
 
 ## Migrations
 
@@ -60,10 +59,9 @@ v1.0 kept its own accounts. The first start of a release with modes moves them o
 <H3 id="v1-to-enterprise">To enterprise</H3>
 
 Start it with the `HAYAT_*` values set. It writes everything the account tables held to `data/hayat-import-<time>.json` before it
-drops them. Load that file with `hayat import`, as in [Enterprise mode](/docs/enterprise#set-up). People keep their ids and
-passwords, workspaces keep their ids, and groups, owners, access lists and admins come along as Hayat grants. If Hayat already knew
-some of the email addresses, copy `hayat-result.json` into the volume and run
-`docker compose exec tabletsgo node scripts/hayat-remap.js /app/data/hayat-result.json` afterwards, as in
+drops them. Load it with `hayat import --file data/hayat-import-<time>.json --out hayat-result.json`, then
+[enroll](/docs/enterprise#set-up). People keep their ids and passwords, workspaces keep their ids, and groups, owners, access lists and
+admins come along as Hayat grants. If Hayat already knew some of the emails, run `hayat-remap.js` as in
 [Solo to enterprise](/docs/solo-to-enterprise).
 
 <H3 id="v1-to-solo">To solo</H3>

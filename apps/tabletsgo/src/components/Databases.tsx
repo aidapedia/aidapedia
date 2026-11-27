@@ -1,23 +1,27 @@
 import { Link } from 'react-router-dom'
 import { PLANNED_ENGINES, SUPPORTED_ENGINES } from '@/content/product'
 import Badge from '@shared/components/Badge'
+import Marquee from '@shared/components/Marquee'
 import DbLogo from './DbLogo'
 import { ArrowRightIcon } from '@shared/components/icons'
 
 export default function Databases() {
   return (
     <section id="databases" aria-label="Databases" className="scroll-mt-28 pb-12">
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Spacing sits on each card, not as a gap on the list, so the seam between the two copies matches. */}
+      <Marquee duration={32}>
         {SUPPORTED_ENGINES.map((engine) => (
-          <li key={engine.id} className="flex items-center gap-3 rounded-card border border-edge bg-card p-4">
-            <DbLogo id={engine.id} size={40} />
-            <div className="min-w-0">
-              <h2 className="text-sm font-medium">{engine.name}</h2>
-              <p className="mt-0.5 text-[13px] text-ink-dim">{engine.kind}</p>
+          <li key={engine.id} className="pr-3 pb-3">
+            <div className="flex w-64 items-center gap-3 rounded-card border border-edge bg-card p-4 transition-colors hover:border-accent/50">
+              <DbLogo id={engine.id} size={40} />
+              <div className="min-w-0">
+                <h2 className="text-sm font-medium">{engine.name}</h2>
+                <p className="mt-0.5 truncate text-[13px] text-ink-dim">{engine.kind}</p>
+              </div>
             </div>
           </li>
         ))}
-      </ul>
+      </Marquee>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-ink-dim">
         <Badge>Planned</Badge>
         <ul className="contents">

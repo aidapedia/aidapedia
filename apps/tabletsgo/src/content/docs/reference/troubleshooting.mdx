@@ -15,10 +15,14 @@ The messages a start or a sign-in can stop with, what they mean and what to do. 
 The store already exists, or isn't SQLite, or this is an enterprise instance, so no key is generated. Set the key the store was
 created with. If it was generated, it is in `/app/data/encryption.key` of the original volume.
 
-<H3 id="hayat-not-configured">Hayat is not configured</H3>
+<H3 id="hayat-not-configured">Enterprise mode needs Hayat's addresses</H3>
 
-The instance runs in enterprise mode without its `HAYAT_*` settings. Set them ([Configuration](/docs/configuration#enterprise)). An
-instance that has run in enterprise mode keeps asking for them even if `TABLETSGO_MODE` is unset.
+The instance runs in enterprise mode without `HAYAT_ISSUER` or `HAYAT_API_URL`. Set them ([Configuration](/docs/configuration#enterprise)).
+An instance that has run in enterprise mode keeps asking for them even if `TABLETSGO_MODE` is unset.
+
+<H3 id="legacy-credentials">HAYAT_CLIENT_ID / HAYAT_CLIENT_SECRET / HAYAT_WEB_CLIENT_ID are ignored</H3>
+
+A warning, not an error. Tabletsgo now gets its credentials by [enrolling with a code](/docs/enterprise#set-up). Remove the variables.
 
 <H3 id="runs-in-enterprise-mode">This instance runs in enterprise mode … solo mode can’t take them back</H3>
 

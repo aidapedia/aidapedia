@@ -12,8 +12,8 @@ its address.
 - `PUBLIC_URL=https://db.acme.com`. Emailed links are built from it, and in solo mode an `https` address marks the session cookie
   `Secure`.
 - Forward `X-Forwarded-Proto`. Tabletsgo also treats a request that arrives with `X-Forwarded-Proto: https` as secure.
-- In enterprise mode, register `https://db.acme.com/callback` as the redirect of `HAYAT_WEB_CLIENT_ID`. `hayat import --app-url` does
-  it for you.
+- In enterprise mode, enrolling registers this address with Hayat as the sign-in redirect. Set `PUBLIC_URL` before you enroll; to
+  change it later, [enroll again](/docs/enterprise#rotate).
 
 ## Examples
 

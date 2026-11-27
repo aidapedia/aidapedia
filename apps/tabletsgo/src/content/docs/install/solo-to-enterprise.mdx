@@ -1,77 +1,60 @@
 ---
 title: Solo to enterprise
 description: "Move a solo instance to enterprise mode with its connections, workspace and settings."
-keywords: migrate upgrade team hayat bundle
+keywords: migrate upgrade team hayat bundle import remap enroll
 ---
 
-A solo instance moves to enterprise mode with its data: connections, storage destinations, SSH hosts and keys, dashboards,
-workflows, the workspace and its settings. You keep your id, so you keep owning everything.
+A solo instance moves to enterprise mode with everything in it: connections, storage, SSH hosts and keys, dashboards, workflows, the
+workspace and its settings. You keep your id, so you keep owning all of it.
 
 <Steps>
   <Step title="Deploy Hayat">
     Use [Hayat's compose file](/docs/enterprise#deploy-hayat), or a Hayat you already run.
   </Step>
-  <Step title="Write the import bundle from the solo instance">
+  <Step title="Write the import bundle">
     ```bash
     docker compose exec tabletsgo npm run hayat:bundle -- --out /app/data/hayat-import.json
     docker compose cp tabletsgo:/app/data/hayat-import.json .
     ```
 
-    It holds you as a pending account with Tabletsgo admin, your workspace as a Hayat tenant with the same id, and every connection
-    and storage destination as a resource you own.
+    It holds you, your workspace (as a Hayat tenant with the same id) and every connection and storage destination you own.
   </Step>
   <Step title="Load it into Hayat">
-    From the folder that holds `hayat-import.json`, run `import` from Hayat's image with Hayat's settings:
-
     ```bash
-    docker compose -f ~/hayat/deploy/compose/docker-compose.yml run --rm --no-deps \
-      --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-      hayat-api import --file hayat-import.json --app-url https://db.acme.com --out hayat-result.json
+    hayat import --file hayat-import.json --out hayat-result.json
     ```
-
-    It registers Tabletsgo and prints the `HAYAT_*` values. The client secret is shown once. See
-    [Register Tabletsgo in Hayat](/docs/enterprise#set-up) for what each flag does.
   </Step>
-  <Step title="Configure and restart in enterprise mode">
-    Add `TABLETSGO_MODE=enterprise`, the printed values and `HAYAT_API_URL` to your settings file: `tabletsgo.env` if you installed
-    from the home page, or `.env` beside the repo's compose files. Set `ENCRYPTION_KEY` too. If solo generated the key, copy it from
-    the volume so the saved credentials stay readable:
+  <Step title="Restart in enterprise mode">
+    Add `TABLETSGO_MODE=enterprise`, `HAYAT_ISSUER`, `HAYAT_API_URL` and `ENCRYPTION_KEY` to your settings. If solo generated the key,
+    copy it so saved credentials stay readable:
 
     ```bash
     docker compose exec tabletsgo cat /app/data/encryption.key
     ```
 
-    Then start it again. With the home page's `compose.yaml`, run `docker compose up -d`. With the repo's files, run
-    `docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d`. If Hayat runs in Docker on the same host, join its
-    network first ([Wiring](/docs/enterprise#wiring)).
-
-    The log shows `🔁 Mode: solo → enterprise`. If you skipped step 2, this start writes the bundle into the volume itself and says
-    where.
+    Then start again. With the repo's files:
+    `docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d`. The log shows `🔁 Mode: solo → enterprise`.
   </Step>
-  <Step title="If Hayat already knew your email, point your data at that account">
-    When `hayat import` printed `1 people matched existing accounts under other ids`, you already had a Hayat account, and it keeps
-    its own id. Rewrite your connections and history to that id:
-
-    ```bash
-    docker compose cp hayat-result.json tabletsgo:/app/data/hayat-result.json
-    docker compose exec tabletsgo node scripts/hayat-remap.js /app/data/hayat-result.json
-    docker compose exec tabletsgo rm /app/data/hayat-result.json
-    ```
-
-    Skip this step when the import said `0 already here`.
-  </Step>
-  <Step title="Sign in at Hayat">
-    If Hayat didn't know you, sign up there with the owner's email: your pending account takes your Tabletsgo id, and with it every
-    connection you own. If it did, sign in with the account you have. Then invite your team in Hayat's console.
+  <Step title="Enroll and sign in">
+    Open Tabletsgo and paste an enrollment code, as in [Enterprise mode](/docs/enterprise#set-up). Then sign up at Hayat with the
+    owner's email: that account takes your id, and with it everything you owned.
   </Step>
 </Steps>
 
-<Callout kind="note" title="Your password doesn't move">
-  Hayat stores passwords its own way, so you choose a password when you sign up there. An account carried over from Tabletsgo v1.0
-  that never signed in to solo mode is the exception: Hayat reads its old password and upgrades it at the first sign-in.
+<Callout kind="note" title="Hayat already knew your email?">
+  If `hayat import` said `1 people matched existing accounts under other ids`, point your data at that account:
+
+  ```bash
+  docker compose cp hayat-result.json tabletsgo:/app/data/hayat-result.json
+  docker compose exec tabletsgo node scripts/hayat-remap.js /app/data/hayat-result.json
+  ```
+
+  Then sign in with the account you have.
 </Callout>
+
+Your password doesn't move: you choose one when you sign up at Hayat.
 
 ## Going back
 
-Once an instance has run in enterprise mode it won't start in solo mode. To work alone again, export the connections you want and
-import them into a new solo instance.
+An instance that has run in enterprise mode won't start in solo mode. To work alone again, export the connections you want and import
+them into a new solo instance.

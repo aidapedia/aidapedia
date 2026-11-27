@@ -15,10 +15,6 @@
   to { opacity: 1; transform: none; filter: none; }
 }
 
-@keyframes marquee {
-  to { transform: translateX(-50%); }
-}
-
 @keyframes caret {
   50% { opacity: 0; }
 }
@@ -41,15 +37,6 @@
     animation: word-swap 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .marquee-track {
-    animation: marquee var(--marquee-duration, 40s) linear infinite;
-    animation-direction: var(--marquee-direction, normal);
-  }
-
-  .marquee:hover .marquee-track {
-    animation-play-state: paused;
-  }
-
   .caret {
     animation: caret 1s steps(1) infinite;
   }
@@ -60,23 +47,5 @@
 
   .fade-in {
     animation: fade-in 1.2s ease-out both;
-  }
-}
-
-/* Without motion the marquee wraps into a still list, and its copy (only there to loop) goes. */
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .marquee-track > ul {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .marquee-copy {
-    display: none;
   }
 }

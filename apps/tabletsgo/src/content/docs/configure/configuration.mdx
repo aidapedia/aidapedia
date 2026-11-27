@@ -35,8 +35,8 @@ app, under Administration.
 
 <H2 id="enterprise">Hayat (enterprise)</H2>
 
-When `hayat import` registers Tabletsgo, it prints `HAYAT_ISSUER`, `HAYAT_CLIENT_ID`, `HAYAT_CLIENT_SECRET` and
-`HAYAT_WEB_CLIENT_ID`. `HAYAT_API_URL` is yours to fill in. For example values in common setups, see
+Only Hayat's addresses are settings. Tabletsgo's credentials come from [enrolling with a code](/docs/enterprise#set-up) and are
+stored encrypted; `HAYAT_CLIENT_ID`, `HAYAT_CLIENT_SECRET` and `HAYAT_WEB_CLIENT_ID` from older installs are ignored. Example values:
 [Wiring Tabletsgo to Hayat](/docs/enterprise#wiring). Solo mode reads none of these.
 
 <Params>
@@ -45,15 +45,6 @@ When `hayat import` registers Tabletsgo, it prints `HAYAT_ISSUER`, `HAYAT_CLIENT
   </Param>
   <Param name="HAYAT_API_URL" badges={[ENT_REQ]}>
     Hayat's service API (the api role), reachable from this server only.
-  </Param>
-  <Param name="HAYAT_CLIENT_ID" badges={[ENT_REQ]}>
-    Tabletsgo's service credentials in Hayat, with `HAYAT_CLIENT_SECRET`.
-  </Param>
-  <Param name="HAYAT_CLIENT_SECRET" badges={[ENT_REQ]}>
-    The secret that goes with the client id. Keep it out of version control.
-  </Param>
-  <Param name="HAYAT_WEB_CLIENT_ID" badges={[ENT_REQ]}>
-    The public client the browser signs in with. A token issued to any other client is refused.
   </Param>
   <Param name="HAYAT_CONSOLE_URL" badges={[ENT, OPT]}>
     Hayat's console. Without it, the "Manage in Hayat" links are hidden.
@@ -71,8 +62,8 @@ When `hayat import` registers Tabletsgo, it prints `HAYAT_ISSUER`, `HAYAT_CLIENT
     The port the server listens on. In `docker-compose.yml` it is the host port; the container always listens on 3000.
   </Param>
   <Param name="PUBLIC_URL" badges={[OPT]}>
-    The address people reach the instance at, such as `https://db.acme.com`. Set it behind a reverse proxy: emailed links use it, and
-    an `https` address marks solo's session cookie `Secure`. See [Reverse proxy and HTTPS](/docs/reverse-proxy).
+    The address people reach the instance at, such as `https://db.acme.com`. Set it behind a reverse proxy: emailed links use it,
+    enrolling registers it with Hayat, and an `https` address marks solo's session cookie `Secure`. See [Reverse proxy and HTTPS](/docs/reverse-proxy).
   </Param>
 </Params>
 
@@ -110,7 +101,7 @@ When `hayat import` registers Tabletsgo, it prints `HAYAT_ISSUER`, `HAYAT_CLIENT
   </Param>
   <Param name="MAX_SESSIONS_PER_CONNECTION" def="0">
     The most connections this instance may hold open to one database at once; `0` means no limit. A workspace can set its own under
-    Workspace → Config.
+    Config.
   </Param>
   <Param name="WORKFLOW_SCHEDULER_ENABLED" def="true">
     Set to `false` to stop the scheduler that runs scheduled workflows and backups, for example on a test instance.
